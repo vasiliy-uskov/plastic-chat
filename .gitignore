@@ -2,4 +2,5 @@ typings/
 node_modules/
 images/
 web/
-.idea
+uploads/
+.idea/
