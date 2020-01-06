@@ -1,6 +1,5 @@
 import {File} from "../../../model/File";
-import {join} from "path";
-import {send400if} from "../../../core/routing/httputils";
+import {send400if} from "../../../core/http/httputils";
 import {Pool} from "mysql";
 import {ISessionContext} from "../../../core/session/ISessionContext";
 
@@ -20,7 +19,5 @@ export async function uploadFile({file: fileData, fileName, context, dataBaseCon
 	const file = File.creat(fileName, fileData);
 	await file.save(dataBaseConnection);
 
-	return {
-		url: join(File.SERVICE_FILE_STORAGE, file.name()),
-	}
+	return { url: file.url() };
 }

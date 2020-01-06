@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS user (
     last_name VARCHAR(255) NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
+    gender TINYINT NOT NULL,
     avatar_id BINARY(16) NULL,
     PRIMARY KEY (user_id),
     UNIQUE INDEX email_UNIQUE (email ASC),

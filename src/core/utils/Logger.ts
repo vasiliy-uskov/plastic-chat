@@ -1,19 +1,24 @@
 import {writeFileSync} from "fs";
 
-export class Logger {
+class Logger {
 	static log(str: string) {
-		writeFileSync(Logger.INFO_FILE, str + '\n', {
-			mode: 'a',
+		writeFileSync(Logger.INFO_FILE, `${str}\n`, {
+			flag: 'a',
 		})
 	}
 
 	static error(err: Error|string) {
-		const data = (err instanceof Error ? err.message : err) + '\n';
-		writeFileSync(Logger.ERRORS_FILE, data, {
-			mode: 'a',
-		})
+		const date = new Date();
+		const message = err instanceof Error ? err.stack : err;
+		writeFileSync(Logger.ERRORS_FILE, `[${date}]\n${message}\n`, {
+			flag: 'a',
+		});
 	}
 
-	private static ERRORS_FILE = './log/errors.log';
-	private static INFO_FILE = './log/info.log';
+	public static ERRORS_FILE = './log/errors.log';
+	public static INFO_FILE = './log/info.log';
+}
+
+export {
+	Logger,
 }

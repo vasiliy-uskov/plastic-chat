@@ -1,5 +1,5 @@
 import {Pool} from "mysql";
-import {buildInsertQuery, buildGetRowQuery, buildIdComparingCondition, buildSetRowQuery} from "../core/bd/SqlBuilder";
+import {buildInsertQuery, buildGetRowQuery, buildEqualCondition, buildSetRowQuery} from "../core/bd/SqlBuilder";
 import {generateUUId} from "../core/utils/UUIDUtils";
 import {User} from "./User";
 import {Chat} from "./Chat";
@@ -48,14 +48,14 @@ export class Message {
 		if (this._wasInserted) {
 			return buildSetRowQuery(connection, {
 				table: 'message',
-				condition: buildIdComparingCondition('message_id', this._id),
+				condition: buildEqualCondition('message_id', this._id),
 				values: {
-					'text': this._text,
+					'text':  this._text,
 				}
 			});
 		}
 		return buildInsertQuery(connection, 'message', [{
-			'message_id': `UNHEX(${this._id})`,
+			'message_id': this._id,
 			'text': this._text,
 			'addresser_id': this._addresserId,
 			'chat_id': this._chatId,
@@ -84,9 +84,9 @@ export class Message {
 	static get(connection: Pool, id: string): Promise<Message> {
 		return buildGetRowQuery(connection, {
 			table: 'chat',
-			condition: buildIdComparingCondition('chat_id', id),
+			condition: buildEqualCondition('chat_id', id),
 			fields: ['message_id', 'text', 'addresser_id', 'chat_id', 'send_date'],
-			mapper: Message.createFromRowData,
+			mapper: (rows) => Message.createFromRowData(rows[0]),
 		})
 	}
 

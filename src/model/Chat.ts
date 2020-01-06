@@ -1,5 +1,5 @@
 import {Pool} from "mysql";
-import {buildInsertQuery, buildGetRowQuery, buildIdComparingCondition, buildSetRowQuery, buildLeftJoin, buildCountRowQuery, buildAndCondition, buildDeleteRowQuery} from "../core/bd/SqlBuilder";
+import {buildInsertQuery, buildGetRowQuery, buildEqualCondition, buildSetRowQuery, buildLeftJoin, buildCountRowQuery, buildAndCondition, buildDeleteRowQuery} from "../core/bd/SqlBuilder";
 import {generateUUId} from "../core/utils/UUIDUtils";
 import {User} from "./User";
 import {Message} from "./Message";
@@ -27,7 +27,7 @@ export class Chat {
 	async users(connection: Pool): Promise<Array<User>> {
 		return buildGetRowQuery(connection, {
 			table: buildLeftJoin('chat_has_user', 'user', 'user_id'),
-			condition: buildIdComparingCondition('chat_id', this._id),
+			condition: buildEqualCondition('chat_id', this._id),
 			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'avatar_id'],
 			mapper: (result: any) => result.map(User.createFromRowData),
 		})
@@ -36,7 +36,7 @@ export class Chat {
 	async messages(connection: Pool): Promise<Array<Message>> {
 		return buildGetRowQuery(connection, {
 			table: 'message',
-			condition: buildIdComparingCondition('chat_id', this._id),
+			condition: buildEqualCondition('chat_id', this._id),
 			fields: ['message_id', 'text', 'owner_id', 'chat_id', 'send_date'],
 			mapper: (result: any) => result.map(Message.createFromRowData),
 		})
@@ -60,8 +60,8 @@ export class Chat {
 		return buildDeleteRowQuery(connection, {
 			table: 'chat_has_user',
 			condition: buildAndCondition(
-				buildIdComparingCondition('chat_id', this._id),
-				buildIdComparingCondition('user_id', user.id())
+				buildEqualCondition('chat_id', this._id),
+				buildEqualCondition('user_id', user.id())
 			),
 		})
 	}
@@ -74,14 +74,14 @@ export class Chat {
 		if (this._wasInserted) {
 			return buildSetRowQuery(connection, {
 				table: 'chat',
-				condition: buildIdComparingCondition('chat_id', this._id),
+				condition: buildEqualCondition('chat_id', this._id),
 				values: {
 					'name': this._name,
 				}
 			});
 		}
 		return buildInsertQuery(connection, 'chat', [{
-			'chat_id': `UNHEX(${this._id})`,
+			'chat_id': this._id,
 			'name': this._name,
 			'creating_date': this._creatingDate.getTime(),
 		}]).then(() => {
@@ -93,8 +93,8 @@ export class Chat {
 		return !!(await buildCountRowQuery(connection, {
 			table: 'chat_has_user',
 			condition: buildAndCondition(
-				buildIdComparingCondition('chat_id', this._id),
-				buildIdComparingCondition('user_id', user.id())
+				buildEqualCondition('chat_id', this._id),
+				buildEqualCondition('user_id', user.id())
 			),
 			groupingField: 'chat_has_user_id'
 		}));
@@ -106,15 +106,20 @@ export class Chat {
 	}
 
 	static createFromRowData(rowData: any): Chat {
-		return new Chat(rowData.chat_id, rowData.name, new Date(rowData.creating_date), true);
+		return new Chat(
+			rowData.chat_id,
+			rowData.name,
+			new Date(rowData.creating_date),
+			true
+		);
 	}
 
 	static get(connection: Pool, id: string): Promise<Chat> {
 		return buildGetRowQuery(connection, {
 			table: 'chat',
-			condition: buildIdComparingCondition('chat_id', id),
+			condition: buildEqualCondition('chat_id', id),
 			fields: ['chat_id', 'name', 'creating_date'],
-			mapper: Chat.createFromRowData,
+			mapper: (rows) => Chat.createFromRowData(rows[0]),
 		})
 	}
 

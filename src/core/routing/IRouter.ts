@@ -1,4 +1,4 @@
-import {HttpMethod} from "./HttpMethod";
+import {HttpMethod} from "../http/HttpMethod";
 import {Validator} from "../scheme/_common";
 import {ISessionContext} from "../session/ISessionContext";
 import {Pool} from "mysql";

@@ -1,9 +1,9 @@
 import {IRouter, Route} from "./IRouter";
 import {Express, Request, Response} from "express-serve-static-core";
-import {HttpMethod} from "./HttpMethod";
+import {HttpMethod} from "../http/HttpMethod";
 import {SessionsHolder} from "../session/SessionHolder";
-import {HttpStatus} from "./HttpStatuses";
-import {HttpError} from "./HttpError";
+import {HttpStatus} from "../http/HttpStatuses";
+import {HttpError} from "../http/HttpError";
 import {ValidationError, Validator} from "../scheme/_common";
 import {Logger} from "../utils/Logger";
 import {Pool} from "mysql";
@@ -30,15 +30,15 @@ export class Router implements IRouter {
 		}
 	}
 
-	private _requestJsonResolver<P, T, R>(rout: Route<P, T, R>, req: Request, res: Response): void {
-		this._executeAction(rout, req)
-			.then(response => {
-				res.status(HttpStatus.OK);
-				res.json(response);
-			})
-			.catch(e => {
-				Router._resolveError(e, res);
-			})
+	private async _requestJsonResolver<P, T, R>(rout: Route<P, T, R>, req: Request, res: Response): Promise<void> {
+		try {
+			const response = await this._executeAction(rout, req);
+			res.status(HttpStatus.OK);
+			res.json(response);
+		}
+		catch (e) {
+			Router._resolveError(e, res);
+		}
 	}
 
 	private async _executeAction<P, T, R>(rout: Route<P, T, R>, req: Request): Promise<R> {
@@ -63,19 +63,20 @@ export class Router implements IRouter {
 		}
 	}
 
-	private static _resolveHttpError(e: HttpError, res: Response): void {
-		switch (e.status) {
+	private static _resolveHttpError(error: HttpError, res: Response): void {
+		res.status(error.status);
+		switch (error.status) {
 			case HttpStatus.REDIRECT:
-				res.redirect(e.message);
+				res.redirect(error.message);
 				break;
 			case HttpStatus.BAD_REQUEST:
-				res.send(`Bad request: ${e.message}`);
+				res.send(`Bad request: ${error.message}`);
 				break;
 			case HttpStatus.NOT_FOUND:
-				res.send(`Not found: ${e.message}`);
+				res.send(`Not found: ${error.message}`);
 				break;
 			case HttpStatus.INTERNAL_ERROR:
-				Logger.error(e);
+				Logger.error(error);
 				res.send(`Oops, something go wrong`);
 				break;
 		}

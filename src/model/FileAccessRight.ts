@@ -1,6 +1,6 @@
 import {Pool} from "mysql";
 import {generateUUId} from "../core/utils/UUIDUtils";
-import {buildGetRowQuery, buildIdComparingCondition, buildInsertQuery, buildSetRowQuery} from "../core/bd/SqlBuilder";
+import {buildGetRowQuery, buildEqualCondition, buildInsertQuery, buildSetRowQuery} from "../core/bd/SqlBuilder";
 import {User} from "./User";
 import {File} from "./File";
 
@@ -48,14 +48,14 @@ export class FileAccessRight {
 		if (this._wasInserted) {
 			return buildSetRowQuery(connection, {
 				table: 'file_access_right',
-				condition: buildIdComparingCondition('file_access_right_id', this._id),
+				condition: buildEqualCondition('file_access_right_id', this._id),
 				values: {
 					'file_access_right_type': this._accessRightType,
 				}
 			});
 		}
 		return buildInsertQuery(connection, 'file_access_right', [{
-			'file_access_right_id': `UNHEX(${this._id})`,
+			'file_access_right_id': this._id,
 			'file_access_right_type': this._accessRightType,
 			'user_id': this._userId,
 			'file_id': this._fileId,
@@ -82,9 +82,9 @@ export class FileAccessRight {
 	static get(connection: Pool, id: string): Promise<FileAccessRight> {
 		return buildGetRowQuery(connection, {
 			table: 'file_access_right',
-			condition: buildIdComparingCondition('file_access_right_id', id),
+			condition: buildEqualCondition('file_access_right_id', id),
 			fields: ['file_access_right_id', 'file_access_right_type', 'user_id', 'file_id'],
-			mapper: FileAccessRight.createFromRowData,
+			mapper: (rows) => FileAccessRight.createFromRowData(rows[0]),
 		})
 	}
 

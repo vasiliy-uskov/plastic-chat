@@ -1,18 +1,45 @@
 import {Pool} from "mysql";
 
-export function buildQuery(pool: Pool, query: string): Promise<any> {
+function buildQuery(pool: Pool, query: string): Promise<any> {
 	return new Promise<any>((resolver, rejects) => {
 		pool.query(query, (error, result) => error ? rejects(error) : resolver(result))
 	});
+}
+
+function isIdField(fieldName: string): boolean {
+	return !!fieldName.match(/.*_id$/);
+}
+
+function processIdValue(id: string): string {
+	return `UNHEX('${id}')`;
+}
+
+function processIdFieldName(fieldName: string): string {
+	return `HEX(${fieldName}) as ${fieldName}`;
+}
+
+export function processStringLiteral(str: string): string {
+	return `'${str}'`;
+}
+
+function processValue(key: string, value: string|null|number): string|number {
+	if (isIdField(key) && value) {
+		return processIdValue(value.toString());
+	}
+	if (typeof value == 'string') {
+		return processStringLiteral(value);
+	}
+	return value != null ? value : "NULL";
 }
 
 export function buildInsertQuery(pool: Pool, table: string, fields: Array<{[key: string]: string|number|null}>): Promise<void> {
 	if (!fields.length) {
 		return Promise.resolve();
 	}
+
 	const keys = Object.keys(fields[0]);
-	const values = fields.map(obj => `(${keys.map(key => obj[key]).join(',')})`);
-	const query = `INSERT INTO ${table} (${keys.join(',')}) SET ${values.join(',')}`;
+	const values = fields.map(obj => `(${keys.map(key => processValue(key, obj[key])).join(', ')})`);
+	const query = `INSERT INTO ${table} (${keys.join(',')}) VALUES ${values.join(', ')}`;
 	return buildQuery(pool, query);
 }
 
@@ -23,8 +50,8 @@ type GetRowOptions<T> = {
 	mapper: (result: any) => T,
 }
 
-export function buildIdComparingCondition(fieldName: string, id: string) {
-	return `${fieldName} = UNHEX(${id})`;
+export function buildEqualCondition(fieldName: string, value: string|number|null) {
+	return `${fieldName} = ${processValue(fieldName, value)}`;
 }
 
 export function buildAndCondition(...conditions: Array<string>) {
@@ -36,8 +63,9 @@ export function buildLeftJoin(table1: string, table2: string, fieldName: string)
 }
 
 export function buildGetRowQuery<T>(pool: Pool, options: GetRowOptions<T>): Promise<T> {
-	const fields = options.fields ? options.fields.join(',') : '*';
-	const query = `SELECT ${fields} FROM ${options.table} WHERE ${options.condition}`;
+	let fields = options.fields ? options.fields : ['*'];
+	fields = fields.map(fieldName => isIdField(fieldName) ? processIdFieldName(fieldName) : fieldName);
+	const query = `SELECT ${fields.join(', ')} FROM ${options.table} WHERE ${options.condition}`;
 	return buildQuery(pool, query).then(options.mapper);
 }
 
@@ -72,8 +100,8 @@ type SetRowOptions = {
 export function buildSetRowQuery<T>(pool: Pool, options: SetRowOptions): Promise<void> {
 	const values = Object
 		.keys(options.values)
-		.map(key => `${key} = ${options.values[key]}`)
-		.join(',');
+		.map(key => `${key} = ${processValue(key, options.values[key])}`)
+		.join(', ');
 	const query = `UPDATE ${options.condition} SET ${values}  WHERE ${options.condition}`;
 	return buildQuery(pool, query);
 }

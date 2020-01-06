@@ -1,15 +1,39 @@
 import {generateUUId} from "../core/utils/UUIDUtils";
 import {Pool} from "mysql";
-import {buildGetRowQuery, buildIdComparingCondition, buildInsertQuery, buildSetRowQuery} from "../core/bd/SqlBuilder";
+import {buildAndCondition, buildEqualCondition, buildGetRowQuery, buildInsertQuery, buildSetRowQuery} from "../core/bd/SqlBuilder";
 import {File} from "./File";
 
+export enum Gender {
+	MALE = 0,
+	FEMALE = 1,
+}
+
+export function genderToString(gender: Gender): ('male'|'female') {
+	switch (gender) {
+		case Gender.MALE:
+			return 'male';
+		case Gender.FEMALE:
+			return 'female';
+	}
+}
+
+export function stringToGender(gender: ('male'|'female')):  Gender {
+	switch (gender) {
+		case 'male':
+			return Gender.MALE;
+		case 'female':
+			return Gender.FEMALE;
+	}
+}
+
 export class User {
-	private constructor(id: string, firstName: string, lastName: string, email: string, password: string, avatarId: string|null = null, wasInserted = false) {
+	private constructor(id: string, firstName: string|null, lastName: string|null, email: string, password: string, gender: Gender, avatarId: string|null = null, wasInserted = false) {
 		this._id = id;
 		this._email = email;
 		this._firstName = firstName;
 		this._lastName = lastName;
 		this._password = password;
+		this._gender = gender;
 		this._avatarId = avatarId;
 		this._wasInserted = wasInserted;
 	}
@@ -22,16 +46,20 @@ export class User {
 		return this._email;
 	}
 
-	firstName(): string {
+	firstName(): string|null {
 		return this._firstName;
 	}
 
-	lastName(): string {
+	lastName(): string|null {
 		return this._lastName;
 	}
 
 	password(): string {
 		return this._password;
+	}
+
+	gender(): Gender {
+		return this._gender;
 	}
 
 	async avatar(connection: Pool): Promise<File | null> {
@@ -65,29 +93,30 @@ export class User {
 		if (this._wasInserted) {
 			return buildSetRowQuery(connection, {
 				table: 'user',
-				condition: buildIdComparingCondition('user_id', this._id),
+				condition: buildEqualCondition('user_id', this._id),
 				values: {
 					'first_name': this._firstName,
 					'last_name': this._lastName,
-					'password': this._firstName,
+					'password': this._password,
 					'avatar_id': this._avatarId,
 				}
 			});
 		}
 		return buildInsertQuery(connection, 'user', [{
-			'user_id': `UNHEX(${this._id})`,
+			'user_id': this._id,
 			'email': this._email,
 			'first_name': this._firstName,
 			'last_name': this._lastName,
-			'password': this._firstName,
+			'password': this._password,
+			'gender': this._gender,
 			'avatar_id': this._avatarId,
 		}]).then(() => {
 			this._wasInserted = true;
 		})
 	}
 
-	static creat(firstName: string, lastName: string, email: string, password: string): User {
-		return new User(generateUUId(), firstName, lastName, email, password);
+	static creat(firstName: string|null, lastName: string|null, email: string, password: string, gender: Gender): User {
+		return new User(generateUUId(), firstName, lastName, email, password, gender);
 	}
 
 	static createFromRowData(rowData: any): User {
@@ -97,7 +126,8 @@ export class User {
 			rowData.last_name,
 			rowData.email,
 			rowData.password,
-			rowData.avatar_id,
+			rowData.gender,
+			rowData.avatar_id ? rowData.avatar_id : rowData.avatar_id,
 			true
 		);
 	}
@@ -105,18 +135,31 @@ export class User {
 	static get(connection: Pool, id: string): Promise<User> {
 		return buildGetRowQuery(connection, {
 			table: 'user',
-			condition: buildIdComparingCondition('user_id', id),
-			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'avatar_id'],
-			mapper: User.createFromRowData,
+			condition: buildEqualCondition('user_id', id),
+			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'gender', 'avatar_id'],
+			mapper: (rows) => User.createFromRowData(rows[0]),
 		})
+	}
+
+	static verifyLogIn(connection: Pool, email: string, password: string): Promise<User|null> {
+		return buildGetRowQuery(connection, {
+			table: 'user',
+			condition: buildAndCondition(
+				buildEqualCondition('email', email),
+				buildEqualCondition('password', password)
+			),
+			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'gender', 'avatar_id'],
+			mapper: (rows) => rows[0] ? User.createFromRowData(rows[0]) : null,
+		});
 	}
 
 	private readonly _id: string;
 	private readonly _email: string;
+	private readonly _gender: Gender;
 
-	private _lastName: string;
+	private _lastName: string|null;
+	private _firstName: string|null;
 	private _password: string;
-	private _firstName: string;
 	private _avatar: File | null = null;
 	private _avatarId: string | null;
 	private _wasInserted: boolean;

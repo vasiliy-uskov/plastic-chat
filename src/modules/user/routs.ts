@@ -1,46 +1,56 @@
 import {IRouter} from "../../core/routing/IRouter";
-import {HttpMethod} from "../../core/routing/HttpMethod";
+import {HttpMethod} from "../../core/http/HttpMethod";
 import {object} from "../../core/scheme/object";
 import {email, guid, string} from "../../core/scheme/string";
 import {any, enumerate, optional} from "../../core/scheme/raw";
-import {array} from "../../core/scheme/array";
+import {Gender, genderToString} from "../../model/User";
+import {getUser} from "./actions/getUser";
+import {registerUser} from "./actions/registerUser";
+import {logInUser} from "./actions/logInUser";
 
 export function initializeUserRouts(router: IRouter) {
-	/**
 	router.addRout({
-		path: 'user/:userId',
+		path: '/user/:userId',
 		method: HttpMethod.GET,
 		pathVariables: object({
 			userId: guid(),
 		}),
 		requestScheme: any(),
 		responseScheme: object({
-			name: optional(string()),
-			secondName: optional(string()),
+			firstName: optional(string()),
+			lastName: optional(string()),
 			email: email(),
 			avatarUrl: optional(string()),
-			gender: enumerate(['mail', 'female']),
+			gender: enumerate([
+				genderToString(Gender.MALE),
+				genderToString(Gender.FEMALE)
+			]),
 		}),
-		action: () => {},
+		action: getUser,
 	});
 
 	router.addRout({
-		path: 'user/register/',
+		path: '/user/register/',
 		method: HttpMethod.POST,
 		pathVariables: any(),
 		requestScheme: object({
-			name: optional(string()),
-			secondName: optional(string()),
+			firstName: optional(string()),
+			lastName: optional(string()),
 			password: string(),
 			email: email(),
-			gender: enumerate(['mail', 'female']),
+			gender: enumerate([
+				genderToString(Gender.MALE),
+				genderToString(Gender.FEMALE)
+			]),
 		}),
-		responseScheme: any(),
-		action: () => {},
+		responseScheme: object({
+			userId: string(),
+		}),
+		action: registerUser,
 	});
 
 	router.addRout({
-		path: 'user/login/',
+		path: '/user/login/',
 		method: HttpMethod.POST,
 		pathVariables: any(),
 		requestScheme: object({
@@ -48,11 +58,12 @@ export function initializeUserRouts(router: IRouter) {
 			password: string(),
 		}),
 		responseScheme: any(),
-		action: () => {},
+		action: logInUser,
 	});
 
+	/**
 	router.addRout({
-		path: 'user/friends_list/',
+		path: '/user/friends_list/',
 		method: HttpMethod.GET,
 		pathVariables: any(),
 		requestScheme: any(),
@@ -68,7 +79,7 @@ export function initializeUserRouts(router: IRouter) {
 	});
 
 	router.addRout({
-		path: 'user/friends_list/remove',
+		path: '/user/friends_list/remove',
 		method: HttpMethod.POST,
 		pathVariables: any(),
 		requestScheme: object({
@@ -81,7 +92,7 @@ export function initializeUserRouts(router: IRouter) {
 	});
 
 	router.addRout({
-		path: 'user/friends_list/add',
+		path: '/user/friends_list/add',
 		method: HttpMethod.POST,
 		pathVariables: any(),
 		requestScheme: object({

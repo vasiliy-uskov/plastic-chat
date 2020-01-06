@@ -8,18 +8,16 @@ export function object<T>(fields: ObjectFields<T>): Validator<T> {
 	return (val) => {
 		const typedVal = checkType<{ [index: string]: unknown }>(val, 'object');
 		const fieldsErrors = new Array<{key: string, message: string}>();
-		for (const key of Object.keys(typedVal)) {
-			if (fields.hasOwnProperty(key)) {
-				try {
-					fields[key](typedVal[key]);
+		for (const key of Object.keys(fields)) {
+			try {
+				fields[key](typedVal[key]);
+			}
+			catch (e) {
+				if (e instanceof ValidationError) {
+					fieldsErrors.push({key, message: e.message});
 				}
-				catch (e) {
-					if (e instanceof ValidationError) {
-						fieldsErrors.push({key, message: e.message});
-					}
-					else {
-						throw e;
-					}
+				else {
+					throw e;
 				}
 			}
 		}

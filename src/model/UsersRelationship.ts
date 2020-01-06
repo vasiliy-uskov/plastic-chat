@@ -1,6 +1,6 @@
 import {Pool} from "mysql";
 import {generateUUId} from "../core/utils/UUIDUtils";
-import {buildGetRowQuery, buildIdComparingCondition, buildInsertQuery, buildSetRowQuery} from "../core/bd/SqlBuilder";
+import {buildGetRowQuery, buildEqualCondition, buildInsertQuery, buildSetRowQuery} from "../core/bd/SqlBuilder";
 import {User} from "./User";
 
 export enum UsersRelationshipType {
@@ -48,14 +48,14 @@ export class UsersRelationship {
 		if (this._wasInserted) {
 			return buildSetRowQuery(connection, {
 				table: 'users_relationship',
-				condition: buildIdComparingCondition('users_relationship_id', this._id),
+				condition: buildEqualCondition('users_relationship_id', this._id),
 				values: {
 					'users_relationship_type': this._relationshipType,
 				}
 			});
 		}
 		return buildInsertQuery(connection, 'file_access_right', [{
-			'users_relationship_id': `UNHEX(${this._id})`,
+			'users_relationship_id': this._id,
 			'users_relationship_type': this._relationshipType,
 			'left_user_id': this._leftUserId,
 			'right_user_id': this._rightUserId,
@@ -82,9 +82,9 @@ export class UsersRelationship {
 	static get(connection: Pool, id: string): Promise<UsersRelationship> {
 		return buildGetRowQuery(connection, {
 			table: 'file_access_right',
-			condition: buildIdComparingCondition('file_access_right_id', id),
+			condition: buildEqualCondition('file_access_right_id', id),
 			fields: ['users_relationship_id', 'users_relationship_type', 'left_user_id', 'right_user_id'],
-			mapper: UsersRelationship.createFromRowData,
+			mapper: rows => UsersRelationship.createFromRowData(rows[0]),
 		})
 	}
 

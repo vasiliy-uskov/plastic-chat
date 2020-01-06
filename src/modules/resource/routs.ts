@@ -1,5 +1,5 @@
 import {IRouter} from "../../core/routing/IRouter";
-import {HttpMethod} from "../../core/routing/HttpMethod";
+import {HttpMethod} from "../../core/http/HttpMethod";
 import {object} from "../../core/scheme/object";
 import {string} from "../../core/scheme/string";
 import {any} from "../../core/scheme/raw";
