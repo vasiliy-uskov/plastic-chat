@@ -6,4 +6,6 @@ export interface ISessionManager {
 	delete(sessionId: string): void;
 
 	loggedUser(sessionId: string): User | null;
+
+	verifiedLoggedUser(sessionId: string): User;
 }

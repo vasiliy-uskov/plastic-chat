@@ -9,8 +9,6 @@ import {registerUser} from "./actions/registerUser";
 import {logInUser} from "./actions/logInUser";
 import {logOutUser} from "./actions/logOutUser";
 import {editUser} from "./actions/editUser";
-import {array} from "../../core/scheme/array";
-
 export function initializeUserRouts(router: IRouter) {
 	router.addRout({
 		path: '/user/:userId',
@@ -118,6 +116,7 @@ export function initializeUserRouts(router: IRouter) {
 		method: HttpMethod.POST,
 		pathVariables: any(),
 		requestScheme: object({
+			sessionId: guid(),
 			usersIds: array(guid()),
 		}),
 		responseScheme: object({
@@ -131,6 +130,7 @@ export function initializeUserRouts(router: IRouter) {
 		method: HttpMethod.POST,
 		pathVariables: any(),
 		requestScheme: object({
+			sessionId: guid(),
 			usersIds: array(guid()),
 		}),
 		responseScheme: object({

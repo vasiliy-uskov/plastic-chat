@@ -101,13 +101,13 @@ CREATE TABLE IF NOT EXISTS chat_has_user (
     CONSTRAINT fk_chat_has_user_chat1
         FOREIGN KEY (chat_id)
             REFERENCES chat (chat_id)
-            ON DELETE NO ACTION
-            ON UPDATE NO ACTION,
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
     CONSTRAINT fk_chat_has_user_user1
         FOREIGN KEY (user_id)
             REFERENCES user (user_id)
-            ON DELETE NO ACTION
-            ON UPDATE NO ACTION)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE)
     ENGINE = InnoDB;
 
 

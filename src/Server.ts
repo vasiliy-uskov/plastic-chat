@@ -4,11 +4,12 @@ import {SessionsManager} from "./core/session/SessionManager";
 import {resolve} from "path";
 import {File} from "./model/File";
 import {Router} from "./core/routing/Router";
-import {initializeResourceRouts} from "./modules/resource/routs";
-import {initializeUserRouts} from "./modules/user/routs";
 import {createPool} from "mysql";
 import {DatabaseConfig} from "./configs/DatabaseConfig";
 import * as bodyParser from "body-parser";
+import {initializeResourceRouts} from "./modules/resource/routs";
+import {initializeUserRouts} from "./modules/user/routs";
+import {initializeChatRouts} from "./modules/chat/routs";
 
 export class Server {
 	constructor() {
@@ -18,6 +19,7 @@ export class Server {
 		const router = new Router(this._app, this._sessionsManager, createPool(DatabaseConfig));
 		initializeUserRouts(router);
 		initializeResourceRouts(router);
+		initializeChatRouts(router);
 		this._app.use((req, res) => { res.sendStatus(404); })
 	}
 

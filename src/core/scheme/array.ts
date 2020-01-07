@@ -1,8 +1,8 @@
-import {checkType, ValidationError, Validator} from "./_common";
+import {checkExtends, ValidationError, Validator} from "./_common";
 
 export function array<T>(validator: Validator<T>): Validator<Array<T>> {
 	return (val) => {
-		const typedVal = checkType<Array<unknown>>(val, 'array');
+		const typedVal = checkExtends<Array<unknown>>(val, Array);
 		const errors = new Array<string>();
 		for (const value of typedVal)
 		{

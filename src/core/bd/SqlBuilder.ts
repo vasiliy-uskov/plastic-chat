@@ -73,7 +73,7 @@ export function buildAndCondition(...conditions: Array<string>) {
 }
 
 export function buildLeftJoin(table1: string, table2: string, fieldName: string) {
-	return `${table1} LEFT JOIN ${table2} ON USING(${fieldName})`;
+	return `${table1} LEFT JOIN ${table2} USING(${fieldName})`;
 }
 
 export function buildGetRowQuery<T>(pool: Pool, options: GetRowOptions<T>): Promise<T> {

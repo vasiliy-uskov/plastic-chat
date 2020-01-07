@@ -1,5 +1,6 @@
 import {Pool} from "mysql";
 import {genderToString, User} from "../../../model/User";
+import {deleteNullFields} from "../../../core/utils/typeutils";
 
 type Props = {
 	userId: string,
@@ -17,20 +18,11 @@ type Out = {
 export async function getUser({userId, dataBaseConnection}: Props): Promise<Out> {
 	const user = await User.get(dataBaseConnection, userId);
 	const avatar = await user.avatar(dataBaseConnection);
-	const out: Out = {
+	return deleteNullFields({
+		firstName: user.firstName(),
+		lastName: user.lastName(),
 		gender: genderToString(user.gender()),
 		email: user.email(),
-	};
-	const firstName = user.firstName();
-	if (firstName) {
-		out.firstName = firstName;
-	}
-	const lastName = user.lastName();
-	if (lastName) {
-		out.lastName = lastName;
-	}
-	if (avatar) {
-		out.avatarUrl = avatar.url();
-	}
-	return out;
+		avatarUrl: avatar && avatar.url(),
+	});
 }

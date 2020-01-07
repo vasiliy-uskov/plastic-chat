@@ -1,5 +1,5 @@
 import {File} from "../../../model/File";
-import {send400if, verifyParameter} from "../../../core/http/httputils";
+import {send400if} from "../../../core/http/httputils";
 import {Pool} from "mysql";
 import {ISessionManager} from "../../../core/session/ISessionManager";
 import {FileAccessRight, FileAccessRightType} from "../../../model/FileAccessRight";
@@ -21,8 +21,8 @@ const MAX_FILE_SIZE = 200 * Math.pow(2, 20); // 200MB
 
 export async function uploadFile({file: fileData, sessionId, fileName, sessionsManager, dataBaseConnection}: Props): Promise<Out> {
 	send400if(fileData.length > MAX_FILE_SIZE, 'Allowed file size 200Mb. File too big');
-	const user = verifyParameter(sessionsManager.loggedUser(sessionId), 'Incorrect sessionId');
 
+	const user = sessionsManager.verifiedLoggedUser(sessionId);
 	const file = File.creat(fileName, fileData);
 	await file.save(dataBaseConnection);
 	await FileAccessRight

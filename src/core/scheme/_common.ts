@@ -12,6 +12,14 @@ export function checkType<T>(val: unknown, type: string): T {
 	return val as T;
 }
 
+export function checkExtends<T>(val: unknown, type: any): T {
+	if (val instanceof type)
+	{
+		return val as T;
+	}
+	throw new ValidationError(`${val} is not instance of ${type}`);
+}
+
 type JoiValidator<T> = (val: T) => {error: joi.ValidationError}
 type TypeChecker<T> = (val: unknown) => T
 

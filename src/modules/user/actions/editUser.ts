@@ -1,6 +1,5 @@
 import {Pool} from "mysql";
 import {ISessionManager} from "../../../core/session/ISessionManager";
-import {verifyParameter} from "../../../core/http/httputils";
 import {File} from "../../../model/File";
 
 type Props = {
@@ -14,7 +13,7 @@ type Props = {
 }
 
 export async function editUser({sessionsManager, dataBaseConnection, sessionId, ...userData}: Props): Promise<void> {
-	const user = verifyParameter(sessionsManager.loggedUser(sessionId), 'Incorrect sessionId');
+	const user = sessionsManager.verifiedLoggedUser(sessionId);
 	if (userData.firstName) {
 		user.setFirstName(userData.firstName);
 	}

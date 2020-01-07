@@ -1,5 +1,5 @@
 import {Pool} from "mysql";
-import {buildInsertQuery, buildGetRowQuery, buildEqualCondition, buildSetRowQuery, buildLeftJoin, buildCountRowQuery, buildAndCondition, buildDeleteRowQuery} from "../core/bd/SqlBuilder";
+import {buildInsertQuery, buildGetRowQuery, buildEqualCondition, buildSetRowQuery, buildLeftJoin, buildAndCondition, buildDeleteRowQuery} from "../core/bd/SqlBuilder";
 import {generateUUId} from "../core/utils/UUIDUtils";
 import {User} from "./User";
 import {Message} from "./Message";
@@ -42,26 +42,30 @@ export class Chat {
 		})
 	}
 
-	async addUser(connection: Pool, user: User): Promise<void> {
-		if (await this.hasUser(connection, user)) {
+	async addUsers(connection: Pool, usersIds: Array<string>): Promise<void> {
+		const addedUsersIds = (await this.users(connection)).map(user => user.id());
+		usersIds = usersIds.filter(id => !addedUsersIds.includes(id));
+		if (!usersIds.length) {
 			return Promise.resolve();
 		}
-		return buildInsertQuery(connection, 'chat_has_user', [{
+		return buildInsertQuery(connection, 'chat_has_user', usersIds.map(userId => ({
 			'chat_has_user_id': generateUUId(),
 			'chat_id': this._id,
-			'user_id': user.id(),
-		}])
+			'user_id': userId,
+		})));
 	}
 
-	async removeUser(connection: Pool, user: User): Promise<void> {
-		if (!await this.hasUser(connection, user)) {
+	async removeUsers(connection: Pool, usersIds: Array<string>): Promise<void> {
+		const addedUsersIds = (await this.users(connection)).map(user => user.id());
+		usersIds = usersIds.filter(id => addedUsersIds.includes(id));
+		if (!usersIds.length) {
 			return Promise.resolve();
 		}
 		return buildDeleteRowQuery(connection, {
 			table: 'chat_has_user',
 			condition: buildAndCondition(
 				buildEqualCondition('chat_id', this._id),
-				buildEqualCondition('user_id', user.id())
+				...usersIds.map(id => buildEqualCondition('user_id', id))
 			),
 		})
 	}
@@ -89,15 +93,11 @@ export class Chat {
 		})
 	}
 
-	private async hasUser(connection: Pool, user: User): Promise<boolean> {
-		return !!(await buildCountRowQuery(connection, {
-			table: 'chat_has_user',
-			condition: buildAndCondition(
-				buildEqualCondition('chat_id', this._id),
-				buildEqualCondition('user_id', user.id())
-			),
-			groupingField: 'chat_has_user_id'
-		}));
+	delete(connection: Pool): Promise<void> {
+		return buildDeleteRowQuery(connection, {
+			table: 'chat',
+			condition: buildEqualCondition('chat_id', this._id),
+		});
 	}
 
 	static creat(name: string): Chat {
