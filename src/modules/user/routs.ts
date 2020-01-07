@@ -51,6 +51,26 @@ export function initializeUserRouts(router: IRouter) {
 	});
 
 	router.addRout({
+		path: '/user/register/',
+		method: HttpMethod.POST,
+		pathVariables: any(),
+		requestScheme: object({
+			firstName: optional(string()),
+			lastName: optional(string()),
+			password: string(),
+			email: email(),
+			gender: enumerate([
+				genderToString(Gender.MALE),
+				genderToString(Gender.FEMALE)
+			]),
+		}),
+		responseScheme: object({
+			userId: string(),
+		}),
+		action: registerUser,
+	});
+
+	router.addRout({
 		path: '/user/login/',
 		method: HttpMethod.POST,
 		pathVariables: any(),
