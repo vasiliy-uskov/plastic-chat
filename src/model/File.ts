@@ -1,11 +1,11 @@
 import {Pool} from "mysql";
 import {writeFileSync} from "fs";
-import {basename, join} from "path";
+import {basename, join, resolve} from "path";
 import {buildInsertQuery, buildGetRowQuery, buildEqualCondition} from "../core/bd/SqlBuilder";
 import {generateUUId} from "../core/utils/UUIDUtils";
 
 export class File {
-	static readonly LOCAL_FILE_STORAGE = './upload';
+	static readonly LOCAL_FILE_STORAGE = './uploads';
 	static readonly SERVICE_FILE_STORAGE = '/resource';
 
 	private constructor(id: string, path: string, creatingDate: Date, wasInserted = false) {
@@ -28,7 +28,7 @@ export class File {
 	}
 
 	url(): string {
-		return join(File.SERVICE_FILE_STORAGE, this.name());
+		return join(File.SERVICE_FILE_STORAGE, this.name()).replace(/\\/g, '/');
 	}
 
 	save(connection: Pool): Promise<void> {
@@ -38,7 +38,7 @@ export class File {
 		return buildInsertQuery(connection, 'file', [{
 			'file_id': this._id,
 			'file_name': this._name,
-			'creating_date': this._creatingDate.getTime(),
+			'creating_date': this._creatingDate,
 		}]).then(() => {
 			this._wasInserted = true;
 		})
@@ -47,7 +47,8 @@ export class File {
 	static creat(fileName: string, file: Buffer): File {
 		const id = generateUUId();
 		const storeFileName = id + basename(fileName);
-		writeFileSync(join(File.LOCAL_FILE_STORAGE, storeFileName), file);
+		const path = resolve(join(File.LOCAL_FILE_STORAGE, storeFileName));
+		writeFileSync(path, file);
 		return new File(id, storeFileName, new Date());
 	}
 

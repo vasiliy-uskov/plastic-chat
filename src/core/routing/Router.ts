@@ -1,7 +1,7 @@
 import {IRouter, Route} from "./IRouter";
 import {Express, Request, Response} from "express-serve-static-core";
 import {HttpMethod} from "../http/HttpMethod";
-import {SessionsHolder} from "../session/SessionHolder";
+import {SessionsManager} from "../session/SessionManager";
 import {HttpStatus} from "../http/HttpStatuses";
 import {HttpError} from "../http/HttpError";
 import {ValidationError, Validator} from "../scheme/_common";
@@ -9,9 +9,9 @@ import {Logger} from "../utils/Logger";
 import {Pool} from "mysql";
 
 export class Router implements IRouter {
-	constructor(app: Express, sessionsHolder: SessionsHolder, dbConnection: Pool) {
+	constructor(app: Express, sessionsManager: SessionsManager, dbConnection: Pool) {
 		this._app = app;
-		this._sessionsHolder = sessionsHolder;
+		this._sessionsManager = sessionsManager;
 		this._dbConnection = dbConnection;
 	}
 
@@ -42,11 +42,11 @@ export class Router implements IRouter {
 	}
 
 	private async _executeAction<P, T, R>(rout: Route<P, T, R>, req: Request): Promise<R> {
-		const context = this._sessionsHolder.getContext(req);
+		const sessionsManager = this._sessionsManager;
 		const data = Router._parseRequestData(rout, req);
 		const response = await rout.action({
 			...data,
-			context,
+			sessionsManager,
 			dataBaseConnection: this._dbConnection,
 		});
 		return Router._validateResponse(rout.responseScheme, response);
@@ -113,6 +113,6 @@ export class Router implements IRouter {
 	}
 
 	private readonly _app: Express;
-	private readonly _sessionsHolder: SessionsHolder;
+	private readonly _sessionsManager: SessionsManager;
 	private readonly _dbConnection: Pool;
 }

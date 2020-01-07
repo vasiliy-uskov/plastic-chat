@@ -59,7 +59,7 @@ export class Message {
 			'text': this._text,
 			'addresser_id': this._addresserId,
 			'chat_id': this._chatId,
-			'send_date': this._sendDate.getTime(),
+			'send_date': this._sendDate,
 		}]).then(() => {
 			this._wasInserted = true;
 		})

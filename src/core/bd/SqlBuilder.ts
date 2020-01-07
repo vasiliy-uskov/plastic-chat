@@ -1,5 +1,7 @@
 import {Pool} from "mysql";
 
+type Primitive = string|Date|number;
+
 function buildQuery(pool: Pool, query: string): Promise<any> {
 	return new Promise<any>((resolver, rejects) => {
 		pool.query(query, (error, result) => error ? rejects(error) : resolver(result))
@@ -22,17 +24,29 @@ export function processStringLiteral(str: string): string {
 	return `'${str}'`;
 }
 
-function processValue(key: string, value: string|null|number): string|number {
+function processValue(key: string, value: Primitive|null): string {
 	if (isIdField(key) && value) {
 		return processIdValue(value.toString());
+	}
+	if (value instanceof Date) {
+		const year = value.getUTCFullYear();
+		const month = value.getUTCMonth() + 1;
+		const day = value.getUTCDay();
+		const hours = value.getUTCHours();
+		const minutes = value.getUTCMinutes();
+		const seconds = value.getUTCSeconds();
+		value = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 	}
 	if (typeof value == 'string') {
 		return processStringLiteral(value);
 	}
-	return value != null ? value : "NULL";
+	if (typeof value == 'number') {
+		return value.toString();
+	}
+	return "NULL";
 }
 
-export function buildInsertQuery(pool: Pool, table: string, fields: Array<{[key: string]: string|number|null}>): Promise<void> {
+export function buildInsertQuery(pool: Pool, table: string, fields: Array<{[key: string]: Primitive|null}>): Promise<void> {
 	if (!fields.length) {
 		return Promise.resolve();
 	}
@@ -50,7 +64,7 @@ type GetRowOptions<T> = {
 	mapper: (result: any) => T,
 }
 
-export function buildEqualCondition(fieldName: string, value: string|number|null) {
+export function buildEqualCondition(fieldName: string, value: Primitive|null) {
 	return `${fieldName} = ${processValue(fieldName, value)}`;
 }
 
@@ -94,7 +108,7 @@ export function buildDeleteRowQuery(pool: Pool, options: DeleteRowOptions): Prom
 type SetRowOptions = {
 	table: string,
 	condition: string,
-	values: {[key: string]: string|number|null},
+	values: {[key: string]: Primitive|null},
 }
 
 export function buildSetRowQuery<T>(pool: Pool, options: SetRowOptions): Promise<void> {

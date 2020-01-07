@@ -1,6 +1,6 @@
 import * as express from "express";
 import {ServerConfig} from "./configs/ServerConfig";
-import {SessionsHolder} from "./core/session/SessionHolder";
+import {SessionsManager} from "./core/session/SessionManager";
 import {resolve} from "path";
 import {File} from "./model/File";
 import {Router} from "./core/routing/Router";
@@ -13,10 +13,9 @@ import * as bodyParser from "body-parser";
 export class Server {
 	constructor() {
 		this._app.use(File.SERVICE_FILE_STORAGE, express.static(resolve(File.LOCAL_FILE_STORAGE)));
-		this._app.use(this._sessionsHolder.sessionMiddleware());
 		this._app.use(bodyParser.json());
 		this._app.use(bodyParser.urlencoded({ extended: true }));
-		const router = new Router(this._app, this._sessionsHolder, createPool(DatabaseConfig));
+		const router = new Router(this._app, this._sessionsManager, createPool(DatabaseConfig));
 		initializeUserRouts(router);
 		initializeResourceRouts(router);
 		this._app.use((req, res) => { res.sendStatus(404); })
@@ -29,5 +28,5 @@ export class Server {
 	}
 
 	private readonly _app = express();
-	private readonly _sessionsHolder = new SessionsHolder();
+	private readonly _sessionsManager = new SessionsManager();
 }

@@ -10,7 +10,7 @@ export function object<T>(fields: ObjectFields<T>): Validator<T> {
 		const fieldsErrors = new Array<{key: string, message: string}>();
 		for (const key of Object.keys(fields)) {
 			try {
-				fields[key](typedVal[key]);
+				typedVal[key] = fields[key](typedVal[key]);
 			}
 			catch (e) {
 				if (e instanceof ValidationError) {
@@ -25,6 +25,6 @@ export function object<T>(fields: ObjectFields<T>): Validator<T> {
 			const fieldsMessage = fieldsErrors.map(({key, message}) => `\t${key}: ${message}`).join('\n');
 			throw new ValidationError(`Object props validation error:\n${fieldsMessage}\n`);
 		}
-		return val as T;
+		return typedVal as T;
 	}
 }

@@ -7,6 +7,7 @@ import {Gender, genderToString} from "../../model/User";
 import {getUser} from "./actions/getUser";
 import {registerUser} from "./actions/registerUser";
 import {logInUser} from "./actions/logInUser";
+import {logOutUser} from "./actions/logOutUser";
 
 export function initializeUserRouts(router: IRouter) {
 	router.addRout({
@@ -57,8 +58,22 @@ export function initializeUserRouts(router: IRouter) {
 			email: email(),
 			password: string(),
 		}),
-		responseScheme: any(),
+		responseScheme: object({
+			userId: string(),
+			sessionId: string(),
+		}),
 		action: logInUser,
+	});
+
+	router.addRout({
+		path: '/user/logout/',
+		method: HttpMethod.POST,
+		pathVariables: any(),
+		requestScheme: object({
+			sessionId: string(),
+		}),
+		responseScheme: any(),
+		action: logOutUser,
 	});
 
 	/**

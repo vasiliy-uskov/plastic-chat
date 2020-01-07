@@ -12,6 +12,7 @@ export function initializeResourceRouts(router: IRouter) {
 		method: HttpMethod.POST,
 		pathVariables: any(),
 		requestScheme: object({
+			sessionId: string(),
 			fileName: string(),
 			file: base64File(),
 		}),

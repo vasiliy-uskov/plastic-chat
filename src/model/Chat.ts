@@ -83,7 +83,7 @@ export class Chat {
 		return buildInsertQuery(connection, 'chat', [{
 			'chat_id': this._id,
 			'name': this._name,
-			'creating_date': this._creatingDate.getTime(),
+			'creating_date': this._creatingDate,
 		}]).then(() => {
 			this._wasInserted = true;
 		})
