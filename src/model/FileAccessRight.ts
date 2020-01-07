@@ -1,6 +1,6 @@
 import {Pool} from "mysql";
 import {generateUUId} from "../core/utils/UUIDUtils";
-import {buildGetRowQuery, buildEqualCondition, buildInsertQuery, buildSetRowQuery} from "../core/bd/SqlBuilder";
+import {buildGetRowQuery, buildEqualCondition, buildInsertQuery, buildSetRowQuery, buildAndCondition} from "../core/bd/SqlBuilder";
 import {User} from "./User";
 import {File} from "./File";
 
@@ -86,6 +86,22 @@ export class FileAccessRight {
 			fields: ['file_access_right_id', 'file_access_right_type', 'user_id', 'file_id'],
 			mapper: (rows) => FileAccessRight.createFromRowData(rows[0]),
 		})
+	}
+
+	static getAccessType(connection: Pool, userId: string, fileId: string): Promise<FileAccessRightType> {
+		return buildGetRowQuery(connection, {
+			table: 'file_access_right',
+			condition: buildAndCondition(
+				buildEqualCondition('user_id', userId),
+				buildEqualCondition('file_id', fileId)
+			),
+			fields: ['file_access_right_type'],
+			mapper: (rows) => (rows[0] && rows[0].file_access_right_type) || FileAccessRightType.EDIT,
+		})
+	}
+
+	static async canEdit(connection: Pool, userId: string, fileId: string): Promise<boolean> {
+		return await FileAccessRight.getAccessType(connection, userId, fileId) == FileAccessRightType.EDIT;
 	}
 
 	private readonly _id: string;

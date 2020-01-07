@@ -9,6 +9,7 @@ import {registerUser} from "./actions/registerUser";
 import {logInUser} from "./actions/logInUser";
 import {logOutUser} from "./actions/logOutUser";
 import {editUser} from "./actions/editUser";
+import {array} from "../../core/scheme/array";
 
 export function initializeUserRouts(router: IRouter) {
 	router.addRout({
@@ -46,27 +47,7 @@ export function initializeUserRouts(router: IRouter) {
 			]),
 		}),
 		responseScheme: object({
-			userId: string(),
-		}),
-		action: registerUser,
-	});
-
-	router.addRout({
-		path: '/user/register/',
-		method: HttpMethod.POST,
-		pathVariables: any(),
-		requestScheme: object({
-			firstName: optional(string()),
-			lastName: optional(string()),
-			password: string(),
-			email: email(),
-			gender: enumerate([
-				genderToString(Gender.MALE),
-				genderToString(Gender.FEMALE)
-			]),
-		}),
-		responseScheme: object({
-			userId: string(),
+			userId: guid(),
 		}),
 		action: registerUser,
 	});
@@ -76,7 +57,7 @@ export function initializeUserRouts(router: IRouter) {
 		method: HttpMethod.POST,
 		pathVariables: any(),
 		requestScheme: object({
-			sessionId: string(),
+			sessionId: guid(),
 			firstName: optional(string()),
 			lastName: optional(string()),
 			password: optional(string()),
@@ -95,8 +76,8 @@ export function initializeUserRouts(router: IRouter) {
 			password: string(),
 		}),
 		responseScheme: object({
-			userId: string(),
-			sessionId: string(),
+			userId: guid(),
+			sessionId: guid(),
 		}),
 		action: logInUser,
 	});
@@ -106,7 +87,7 @@ export function initializeUserRouts(router: IRouter) {
 		method: HttpMethod.POST,
 		pathVariables: any(),
 		requestScheme: object({
-			sessionId: string(),
+			sessionId: guid(),
 		}),
 		responseScheme: any(),
 		action: logOutUser,
@@ -117,7 +98,9 @@ export function initializeUserRouts(router: IRouter) {
 		path: '/user/friends_list/',
 		method: HttpMethod.GET,
 		pathVariables: any(),
-		requestScheme: any(),
+		requestScheme: object({
+			sessionId: guid(),
+		}),
 		responseScheme: object({
 			users: array(
 				object({
@@ -129,6 +112,7 @@ export function initializeUserRouts(router: IRouter) {
 		action: () => {},
 	});
 
+	/**
 	router.addRout({
 		path: '/user/friends_list/remove',
 		method: HttpMethod.POST,

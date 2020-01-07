@@ -1,7 +1,7 @@
 import {Pool} from "mysql";
-import {writeFileSync} from "fs";
+import {unlinkSync, writeFileSync} from "fs";
 import {basename, join, resolve} from "path";
-import {buildInsertQuery, buildGetRowQuery, buildEqualCondition} from "../core/bd/SqlBuilder";
+import {buildInsertQuery, buildGetRowQuery, buildEqualCondition, buildDeleteRowQuery} from "../core/bd/SqlBuilder";
 import {generateUUId} from "../core/utils/UUIDUtils";
 
 export class File {
@@ -44,11 +44,19 @@ export class File {
 		})
 	}
 
+	async delete(connection: Pool): Promise<void> {
+		const filePath = File.filePath(this._name);
+		await buildDeleteRowQuery(connection, {
+			table: 'file',
+			condition: buildEqualCondition('file_id', this._id),
+		});
+		unlinkSync(filePath);
+	}
+
 	static creat(fileName: string, file: Buffer): File {
 		const id = generateUUId();
 		const storeFileName = id + basename(fileName);
-		const path = resolve(join(File.LOCAL_FILE_STORAGE, storeFileName));
-		writeFileSync(path, file);
+		writeFileSync(File.filePath(storeFileName), file);
 		return new File(id, storeFileName, new Date());
 	}
 
@@ -68,6 +76,10 @@ export class File {
 			fields: ['file_id', 'file_name', 'creating_date'],
 			mapper: (rows) => File.createFromRowData(rows[0]),
 		})
+	}
+
+	private static filePath(fileName: string): string {
+		return resolve(join(File.LOCAL_FILE_STORAGE, fileName));
 	}
 
 	private readonly _id: string;
