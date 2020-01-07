@@ -8,6 +8,7 @@ import {getUser} from "./actions/getUser";
 import {registerUser} from "./actions/registerUser";
 import {logInUser} from "./actions/logInUser";
 import {logOutUser} from "./actions/logOutUser";
+import {editUser} from "./actions/editUser";
 
 export function initializeUserRouts(router: IRouter) {
 	router.addRout({
@@ -68,6 +69,21 @@ export function initializeUserRouts(router: IRouter) {
 			userId: string(),
 		}),
 		action: registerUser,
+	});
+
+	router.addRout({
+		path: '/user/edit/',
+		method: HttpMethod.POST,
+		pathVariables: any(),
+		requestScheme: object({
+			sessionId: string(),
+			firstName: optional(string()),
+			lastName: optional(string()),
+			password: optional(string()),
+			avatarId: optional(string()),
+		}),
+		responseScheme: any(),
+		action: editUser,
 	});
 
 	router.addRout({

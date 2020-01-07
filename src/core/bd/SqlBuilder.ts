@@ -116,6 +116,6 @@ export function buildSetRowQuery<T>(pool: Pool, options: SetRowOptions): Promise
 		.keys(options.values)
 		.map(key => `${key} = ${processValue(key, options.values[key])}`)
 		.join(', ');
-	const query = `UPDATE ${options.condition} SET ${values}  WHERE ${options.condition}`;
+	const query = `UPDATE ${options.table} SET ${values}  WHERE ${options.condition}`;
 	return buildQuery(pool, query);
 }
