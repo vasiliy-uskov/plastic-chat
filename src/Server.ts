@@ -10,6 +10,7 @@ import * as bodyParser from "body-parser";
 import {initializeResourceRouts} from "./modules/resource/routs";
 import {initializeUserRouts} from "./modules/user/routs";
 import {initializeChatRouts} from "./modules/chat/routs";
+import {initializeMessageRouts} from "./modules/message/routs";
 
 export class Server {
 	constructor() {
@@ -20,6 +21,7 @@ export class Server {
 		initializeUserRouts(router);
 		initializeResourceRouts(router);
 		initializeChatRouts(router);
+		initializeMessageRouts(router);
 		this._app.use((req, res) => { res.sendStatus(404); })
 	}
 

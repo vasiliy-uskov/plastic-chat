@@ -1,8 +1,9 @@
 import {Pool} from "mysql";
-import {buildInsertQuery, buildGetRowQuery, buildEqualCondition, buildSetRowQuery} from "../core/bd/SqlBuilder";
+import {buildInsertQuery, buildGetRowQuery, buildEqualCondition, buildSetRowQuery, buildDeleteRowQuery, buildLeftJoin, buildLeftJoinCondition} from "../core/bd/SqlBuilder";
 import {generateUUId} from "../core/utils/UUIDUtils";
 import {User} from "./User";
 import {Chat} from "./Chat";
+import {File} from "./File";
 
 export class Message {
 	private constructor(id: string, text: string, addresserID: string, chatId: string, sendDate: Date, wasInserted = false) {
@@ -26,6 +27,10 @@ export class Message {
 		return this._sendDate;
 	}
 
+	isAddresser(user: User): boolean {
+		return this._addresserId === user.id();
+	}
+
 	async chat(connection: Pool): Promise<Chat> {
 		if (!this._chat) {
 			this._chat = await Chat.get(connection, this._chatId);
@@ -40,11 +45,33 @@ export class Message {
 		return this._addresser;
 	}
 
+	async attachments(connection: Pool): Promise<Array<File>> {
+		return buildGetRowQuery(connection, {
+			table: buildLeftJoin('message_has_file', 'file', buildLeftJoinCondition('message_has_file', 'file', 'file_id')),
+			condition: buildEqualCondition('message_id', this._id),
+			fields: ['file_id', 'file_name', 'creating_date'],
+			mapper: (result: any) => result.map(File.createFromRowData),
+		})
+	}
+
 	setText(text: string): void {
 		this._text = text;
 	}
 
-	save(connection: Pool): Promise<void> {
+	async addAttachments(connection: Pool, attachmentsIds: Array<string>) {
+		const addedAttachmentsIds = (await this.attachments(connection)).map(attachment => attachment.id());
+		attachmentsIds = attachmentsIds.filter(id => !addedAttachmentsIds.includes(id));
+		if (!attachmentsIds.length) {
+			return Promise.resolve();
+		}
+		return buildInsertQuery(connection, 'message_has_file', attachmentsIds.map(id => ({
+			'message_has_file_id': generateUUId(),
+			'message_id': this._id,
+			'file_id': id,
+		})));
+	}
+
+	async save(connection: Pool): Promise<void> {
 		if (this._wasInserted) {
 			return buildSetRowQuery(connection, {
 				table: 'message',
@@ -65,6 +92,13 @@ export class Message {
 		})
 	}
 
+	async delete(connection: Pool): Promise<void> {
+		return buildDeleteRowQuery(connection, {
+			table: 'message',
+			condition: buildEqualCondition('message_id', this._id),
+		});
+	}
+
 	static creat(text: string, addresserId: string, chatId: string): Message {
 		const id = generateUUId();
 		return new Message(id, text, addresserId, chatId, new Date());
@@ -83,8 +117,8 @@ export class Message {
 
 	static get(connection: Pool, id: string): Promise<Message> {
 		return buildGetRowQuery(connection, {
-			table: 'chat',
-			condition: buildEqualCondition('chat_id', id),
+			table: 'message',
+			condition: buildEqualCondition('message_id', id),
 			fields: ['message_id', 'text', 'addresser_id', 'chat_id', 'send_date'],
 			mapper: (rows) => Message.createFromRowData(rows[0]),
 		})

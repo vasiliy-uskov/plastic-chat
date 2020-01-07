@@ -46,6 +46,26 @@ function processValue(key: string, value: Primitive|null): string {
 	return "NULL";
 }
 
+export function buildAlias(table: string, columnName: string) {
+	return `${table}.${columnName} as ${columnName}`;
+}
+
+export function buildEqualCondition(fieldName: string, value: Primitive|null) {
+	return `${fieldName} = ${processValue(fieldName, value)}`;
+}
+
+export function buildAndCondition(...conditions: Array<string>) {
+	return `${conditions.join(' AND ')}`;
+}
+
+export function buildLeftJoinCondition(table1: string, table2: string, fieldName: string, secondTableFieldName?: string) {
+	return secondTableFieldName ? `ON ${table1}.${fieldName} = ${table2}.${secondTableFieldName}` : `USING(${fieldName})`;
+}
+
+export function buildLeftJoin(table1: string, table2: string, condition: string) {
+	return `${table1} LEFT JOIN ${table2} ${condition}`;
+}
+
 export function buildInsertQuery(pool: Pool, table: string, fields: Array<{[key: string]: Primitive|null}>): Promise<void> {
 	if (!fields.length) {
 		return Promise.resolve();
@@ -57,29 +77,33 @@ export function buildInsertQuery(pool: Pool, table: string, fields: Array<{[key:
 	return buildQuery(pool, query);
 }
 
+export enum SortingOrder {
+	ASCEND = 'ASC',
+	DESCEND = 'DESC'
+}
+
+
 type GetRowOptions<T> = {
 	table: string,
-	condition: string,
+	condition?: string,
 	fields?: Array<string>,
+	sort?: {
+		columnName: string,
+		order: SortingOrder,
+	},
+	offset?: number,
+	limit?: number,
 	mapper: (result: any) => T,
-}
-
-export function buildEqualCondition(fieldName: string, value: Primitive|null) {
-	return `${fieldName} = ${processValue(fieldName, value)}`;
-}
-
-export function buildAndCondition(...conditions: Array<string>) {
-	return `${conditions.join(' AND ')}`;
-}
-
-export function buildLeftJoin(table1: string, table2: string, fieldName: string) {
-	return `${table1} LEFT JOIN ${table2} USING(${fieldName})`;
 }
 
 export function buildGetRowQuery<T>(pool: Pool, options: GetRowOptions<T>): Promise<T> {
 	let fields = options.fields ? options.fields : ['*'];
 	fields = fields.map(fieldName => isIdField(fieldName) ? processIdFieldName(fieldName) : fieldName);
-	const query = `SELECT ${fields.join(', ')} FROM ${options.table} WHERE ${options.condition}`;
+	const condition = options.condition ? ` WHERE ${options.condition}` : '';
+	const order = options.sort ? ` ORDER BY ${options.sort.columnName} ${options.sort.order}` : '';
+	const limit = options.limit ? ` LIMIT ${options.limit}` : '';
+	const offset = options.offset ? ` OFFSET ${options.limit}` : '';
+	const query = `SELECT ${fields.join(', ')} FROM ${options.table}${condition}${order}${limit}${offset}`;
 	return buildQuery(pool, query).then(options.mapper);
 }
 

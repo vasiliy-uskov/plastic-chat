@@ -1,8 +1,9 @@
 import {Pool} from "mysql";
-import {buildInsertQuery, buildGetRowQuery, buildEqualCondition, buildSetRowQuery, buildLeftJoin, buildAndCondition, buildDeleteRowQuery} from "../core/bd/SqlBuilder";
+import {buildAndCondition, buildDeleteRowQuery, buildEqualCondition, buildGetRowQuery, buildInsertQuery, buildLeftJoin, buildLeftJoinCondition, buildSetRowQuery, SortingOrder} from "../core/bd/SqlBuilder";
 import {generateUUId} from "../core/utils/UUIDUtils";
 import {User} from "./User";
 import {Message} from "./Message";
+import {File} from "./File";
 
 export class Chat {
 	private constructor(id: string, path: string, creatingDate: Date, wasInserted = false) {
@@ -26,19 +27,42 @@ export class Chat {
 
 	async users(connection: Pool): Promise<Array<User>> {
 		return buildGetRowQuery(connection, {
-			table: buildLeftJoin('chat_has_user', 'user', 'user_id'),
+			table: buildLeftJoin('chat_has_user', 'user', buildLeftJoinCondition('chat_has_user', 'user', 'user_id')),
 			condition: buildEqualCondition('chat_id', this._id),
 			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'avatar_id'],
 			mapper: (result: any) => result.map(User.createFromRowData),
 		})
 	}
 
-	async messages(connection: Pool): Promise<Array<Message>> {
+	async messages(connection: Pool, page: number, pageMessagesCount: number): Promise<Array<{message: Message, addresser: User, avatar: File|null}>> {
+		const table = buildLeftJoin(
+			buildLeftJoin(
+				'message',
+				'user',
+				buildLeftJoinCondition('message', 'user', 'addresser_id', 'user_id')
+			),
+			'file',
+			buildLeftJoinCondition('user', 'file', 'avatar_id', 'file_id')
+		);
 		return buildGetRowQuery(connection, {
-			table: 'message',
+			table,
 			condition: buildEqualCondition('chat_id', this._id),
-			fields: ['message_id', 'text', 'owner_id', 'chat_id', 'send_date'],
-			mapper: (result: any) => result.map(Message.createFromRowData),
+			fields: [
+				'message_id', 'text', 'chat_id', 'send_date', 'addresser_id',
+				'user_id', 'email', 'first_name', 'last_name', 'gender', 'password', 'avatar_id',
+				'file_id', 'file_name', 'creating_date'
+			],
+			sort: {
+				columnName: 'send_date',
+				order: SortingOrder.DESCEND,
+			},
+			offset: page * pageMessagesCount,
+			limit: pageMessagesCount,
+			mapper: (result: any) => result.map((rowData: any) => ({
+				message: Message.createFromRowData(rowData),
+				addresser: User.createFromRowData(rowData),
+				avatar: rowData.file_id ? File.createFromRowData(rowData) : null,
+			})),
 		})
 	}
 
