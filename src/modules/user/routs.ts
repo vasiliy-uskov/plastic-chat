@@ -11,8 +11,8 @@ import {logOutUser} from "./actions/logOutUser";
 import {editUser} from "./actions/editUser";
 import {array} from "../../core/scheme/array";
 import {getFriendsList} from "./actions/getFriendsList";
-import {removeFriends} from "./actions/removeFriends";
-import {addFriends} from "./actions/addFriends";
+import {removeFriend} from "./actions/removeFriend";
+import {addFriend} from "./actions/addFriend";
 import {findUsers} from "./actions/findUsers";
 
 export function initializeUserRouts(router: IRouter) {
@@ -102,6 +102,30 @@ export function initializeUserRouts(router: IRouter) {
 	});
 
 	router.addRout({
+		path: '/user/friends_list/remove',
+		method: HttpMethod.POST,
+		pathVariables: any(),
+		requestScheme: object({
+			sessionId: guid(),
+			userId: guid(),
+		}),
+		responseScheme: any(),
+		action: removeFriend,
+	});
+
+	router.addRout({
+		path: '/user/friends_list/add',
+		method: HttpMethod.POST,
+		pathVariables: any(),
+		requestScheme: object({
+			sessionId: guid(),
+			userId: guid(),
+		}),
+		responseScheme: any(),
+		action: addFriend,
+	});
+
+	router.addRout({
 		path: '/user/friends_list/',
 		method: HttpMethod.GET,
 		pathVariables: any(),
@@ -123,30 +147,6 @@ export function initializeUserRouts(router: IRouter) {
 			),
 		}),
 		action: getFriendsList,
-	});
-
-	router.addRout({
-		path: '/user/friends_list/remove',
-		method: HttpMethod.POST,
-		pathVariables: any(),
-		requestScheme: object({
-			sessionId: guid(),
-			usersIds: array(guid()),
-		}),
-		responseScheme: any(),
-		action: removeFriends,
-	});
-
-	router.addRout({
-		path: '/user/friends_list/add',
-		method: HttpMethod.POST,
-		pathVariables: any(),
-		requestScheme: object({
-			sessionId: guid(),
-			usersIds: array(guid()),
-		}),
-		responseScheme: any(),
-		action: addFriends,
 	});
 
 	router.addRout({

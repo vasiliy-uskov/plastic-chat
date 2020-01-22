@@ -1,8 +1,8 @@
 import {writeFileSync} from "fs";
 
 class Logger {
-	static log(str: string) {
-		writeFileSync(Logger.INFO_FILE, `${str}\n`, {
+	static log(...str: Array<string>) {
+		writeFileSync(Logger.INFO_FILE, `${str.join(' ')}\n`, {
 			flag: 'a',
 		})
 	}

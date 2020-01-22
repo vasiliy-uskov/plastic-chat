@@ -1,6 +1,6 @@
 import {Pool} from "mysql";
 import {generateUUId} from "../core/utils/UUIDUtils";
-import {buildGetRowQuery, buildEqualCondition, buildInsertQuery, buildSetRowQuery, buildLeftJoin, buildLeftJoinCondition, buildAndCondition, buildDeleteRowQuery} from "../core/bd/SqlBuilder";
+import {buildGetRowQuery, buildEqualCondition, buildInsertQuery, buildSetRowQuery, buildLeftJoin, buildLeftJoinCondition, buildAndCondition, buildDeleteRowQuery, buildOrCondition} from "../core/bd/SqlBuilder";
 import {User} from "./User";
 
 export enum UsersRelationshipType {
@@ -100,14 +100,27 @@ export class UsersRelationship {
 		})
 	}
 
-	static async removeFriends(connection: Pool, userId: string, usersIds: Array<string>): Promise<void> {
-		await UsersRelationship.remove(connection, userId, UsersRelationshipType.FRIEND, usersIds);
+	static async removeFriend(connection: Pool, firstUserId: string, secondUserId: string): Promise<void> {
+		if (firstUserId == secondUserId) {
+			return
+		}
+		await buildDeleteRowQuery(connection, {
+			table: 'users_relationship',
+			condition: buildAndCondition(
+				buildEqualCondition('left_user_id', firstUserId),
+				buildEqualCondition('right_user_id', secondUserId),
+				buildOrCondition(
+					buildEqualCondition('users_relationship_type', UsersRelationshipType.FRIEND),
+					buildEqualCondition('users_relationship_type', UsersRelationshipType.SUBSCRIBER)
+				),
+			),
+		});
 		await buildSetRowQuery(connection, {
 			table: 'users_relationship',
 			condition: buildAndCondition(
-				buildEqualCondition('right_user_id', userId),
+				buildEqualCondition('left_user_id', secondUserId),
+				buildEqualCondition('right_user_id', firstUserId),
 				buildEqualCondition('users_relationship_type', UsersRelationshipType.FRIEND),
-				...usersIds.map(id => buildEqualCondition('left_user_id', id))
 			),
 			values: {
 				'users_relationship_type': UsersRelationshipType.SUBSCRIBER,
@@ -115,71 +128,34 @@ export class UsersRelationship {
 		})
 	}
 
-	static async addFriends(connection: Pool, userId: string, usersIds: Array<string>): Promise<void> {
-		await buildSetRowQuery(connection, {
-			table: 'users_relationship',
-			condition: buildAndCondition(
-				buildEqualCondition('left_user_id', userId),
-				...usersIds.map(id => buildEqualCondition('right_user_id', id))
-			),
-			values: {
-				'users_relationship_type': UsersRelationshipType.SUBSCRIBER,
-			}
-		});
-		const subscribesList = await UsersRelationship.getSubscribesIds(connection, userId);
-		await buildSetRowQuery(connection, {
-			table: 'users_relationship',
-			condition: buildAndCondition(
-				buildAndCondition(
-					buildEqualCondition('left_user_id', userId),
-					...usersIds
-						.filter(id => subscribesList.includes(id))
-						.map(id => buildEqualCondition('right_user_id', id))
-				),
-				buildAndCondition(
-					buildEqualCondition('right_user_id', userId),
-					...usersIds
-						.filter(id => subscribesList.includes(id))
-						.map(id => buildEqualCondition('left_user_id', id))
-				)
-			),
-			values: {
-				'users_relationship_type': UsersRelationshipType.FRIEND,
-			}
-		});
-		const subscribesToInsert = usersIds.filter(id => !subscribesList.includes(id));
-		await buildInsertQuery(
-			connection,
-			'users_relationship',
-			subscribesToInsert.map(subscribesId => ({
-				'users_relationship_id': generateUUId(),
-				'users_relationship_type': UsersRelationshipType.SUBSCRIBER,
-				'left_user_id': userId,
-				'right_user_id': subscribesId,
-			}))
-		);
+	static async addFriend(connection: Pool, firstUserId: string, secondUserId: string): Promise<void> {
+		if (firstUserId == secondUserId) {
+			return
+		}
+		let relationship = await UsersRelationship.getByUsers(connection, firstUserId, secondUserId);
+		if (!relationship)
+		{
+			relationship = UsersRelationship.creat(UsersRelationshipType.SUBSCRIBER, firstUserId, secondUserId)
+		}
+		const reverseRelationship = await UsersRelationship.getByUsers(connection, secondUserId, firstUserId);
+		if (reverseRelationship && reverseRelationship.relationshipType() == UsersRelationshipType.SUBSCRIBER)
+		{
+			relationship.setRelationshipType(UsersRelationshipType.FRIEND);
+			reverseRelationship.setRelationshipType(UsersRelationshipType.FRIEND);
+			await reverseRelationship.save(connection)
+		}
+		await relationship.save(connection)
 	}
 
-	private static async remove(connection: Pool, userId: string, relationshipType: UsersRelationshipType, usersIds: Array<string>): Promise<void> {
-		await buildDeleteRowQuery(connection, {
-			table: 'users_relationship',
-			condition: buildAndCondition(
-				buildEqualCondition('left_user_id', userId),
-				buildEqualCondition('users_relationship_type', relationshipType),
-				...usersIds.map(id => buildEqualCondition('right_user_id', id))
-			),
-		});
-	}
-
-	private static getSubscribesIds(connection: Pool, userId: string): Promise<Array<string>> {
+	private static getByUsers(connection: Pool, firstUserId: string, secondUserId: string): Promise<(UsersRelationship|null)> {
 		return buildGetRowQuery(connection, {
 			table: 'users_relationship',
 			condition: buildAndCondition(
-				buildEqualCondition('left_user_id', userId),
-				buildEqualCondition('users_relationship_type', UsersRelationshipType.SUBSCRIBER)
+				buildEqualCondition('left_user_id', firstUserId),
+				buildEqualCondition('right_user_id', secondUserId),
 			),
-			fields: ['right_user_id'],
-			mapper: (rows: Array<{right_user_id: string}>) => rows.map(row => row.right_user_id),
+			fields: ['users_relationship_id', 'users_relationship_type', 'left_user_id', 'right_user_id'],
+			mapper: rows => rows[0] ? UsersRelationship.createFromRowData(rows[0]) : null,
 		})
 	}
 

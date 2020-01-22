@@ -64,11 +64,11 @@ export function buildEqualCondition(fieldName: string, value: Primitive|null): s
 }
 
 export function buildAndCondition(...conditions: Array<string>): string {
-	return `${conditions.join(' AND ')}`;
+	return `${conditions.map(condition => `(${condition})`).join(' AND ')}`;
 }
 
 export function buildOrCondition(...conditions: Array<string>): string {
-	return `${conditions.join(' OR ')}`;
+	return `${conditions.map(condition => `(${condition})`).join(' OR ')}`;
 }
 
 export function buildLeftJoinCondition(table1: string, table2: string, fieldName: string, secondTableFieldName?: string): string {
@@ -106,7 +106,7 @@ type GetRowOptions<T> = {
 	},
 	offset?: number,
 	limit?: number,
-	mapper: (result: any) => T,
+	mapper: (result: Array<any>) => T,
 }
 
 export function buildGetRowQuery<T>(pool: Pool, options: GetRowOptions<T>): Promise<T> {
