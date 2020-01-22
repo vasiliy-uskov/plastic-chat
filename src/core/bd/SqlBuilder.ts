@@ -1,4 +1,4 @@
-import {Pool} from "mysql";
+import {Pool, escape} from "mysql";
 
 type Primitive = string|Date|number;
 
@@ -12,16 +12,16 @@ function isIdField(fieldName: string): boolean {
 	return !!fieldName.match(/.*_id$/);
 }
 
+export function processStringLiteral(str: string): string {
+	return `'${escape(str)}'`;
+}
+
 function processIdValue(id: string): string {
-	return `UNHEX('${id}')`;
+	return `UNHEX(${processStringLiteral(id)})`;
 }
 
 function processIdFieldName(fieldName: string): string {
 	return `HEX(${fieldName}) as ${fieldName}`;
-}
-
-export function processStringLiteral(str: string): string {
-	return `'${str}'`;
 }
 
 function processValue(key: string, value: Primitive|null): string {
