@@ -1,6 +1,6 @@
 import {generateUUId} from "../core/utils/UUIDUtils";
 import {Pool} from "mysql";
-import {buildAndCondition, buildEqualCondition, buildGetRowQuery, buildInsertQuery, buildSetRowQuery} from "../core/bd/SqlBuilder";
+import {buildAndCondition, buildEqualCondition, buildFullTextSearch, buildGetRowQuery, buildInsertQuery, buildSetRowQuery} from "../core/bd/SqlBuilder";
 import {File} from "./File";
 
 export enum Gender {
@@ -138,6 +138,15 @@ export class User {
 			condition: buildEqualCondition('user_id', id),
 			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'gender', 'avatar_id'],
 			mapper: (rows) => User.createFromRowData(rows[0]),
+		})
+	}
+
+	static find(connection: Pool, searchString: string): Promise<Array<User>> {
+		return buildGetRowQuery(connection, {
+			table: 'user',
+			condition: buildFullTextSearch(['email', 'first_name', 'last_name'], [searchString]),
+			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'gender', 'avatar_id'],
+			mapper: (rows: Array<any>) => rows.map(User.createFromRowData),
 		})
 	}
 

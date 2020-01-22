@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS user (
     PRIMARY KEY (user_id),
     UNIQUE INDEX email_UNIQUE (email ASC),
     UNIQUE INDEX user_id_UNIQUE (user_id ASC),
+    FULLTEXT `find_user_index` (first_name, last_name, email),
     INDEX avatar_id_idx (avatar_id ASC),
     CONSTRAINT avatar_id
         FOREIGN KEY (avatar_id)
@@ -121,6 +122,7 @@ CREATE TABLE IF NOT EXISTS message (
     UNIQUE INDEX message_id_UNIQUE (message_id ASC),
     INDEX fk_message_user1_idx (addresser_id ASC),
     INDEX fk_message_chat1_idx (chat_id ASC),
+    INDEX fk_message_send_date_idx (send_date DESC),
     CONSTRAINT fk_message_user1
         FOREIGN KEY (addresser_id)
             REFERENCES user (user_id)

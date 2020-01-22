@@ -46,23 +46,36 @@ function processValue(key: string, value: Primitive|null): string {
 	return "NULL";
 }
 
-export function buildAlias(table: string, columnName: string) {
+export function buildAlias(table: string, columnName: string): string {
 	return `${table}.${columnName} as ${columnName}`;
 }
 
-export function buildEqualCondition(fieldName: string, value: Primitive|null) {
+export function buildFullTextSearch(fieldNames: Array<string>, values: Array<string>): string {
+	const match = fieldNames.join(', ');
+	const against = values
+		.map(value => value.toLowerCase())
+		.map(processStringLiteral)
+		.join(', ');
+	return `MATCH(${match}) AGAINST(${against})`;
+}
+
+export function buildEqualCondition(fieldName: string, value: Primitive|null): string {
 	return `${fieldName} = ${processValue(fieldName, value)}`;
 }
 
-export function buildAndCondition(...conditions: Array<string>) {
+export function buildAndCondition(...conditions: Array<string>): string {
 	return `${conditions.join(' AND ')}`;
 }
 
-export function buildLeftJoinCondition(table1: string, table2: string, fieldName: string, secondTableFieldName?: string) {
+export function buildOrCondition(...conditions: Array<string>): string {
+	return `${conditions.join(' OR ')}`;
+}
+
+export function buildLeftJoinCondition(table1: string, table2: string, fieldName: string, secondTableFieldName?: string): string {
 	return secondTableFieldName ? `ON ${table1}.${fieldName} = ${table2}.${secondTableFieldName}` : `USING(${fieldName})`;
 }
 
-export function buildLeftJoin(table1: string, table2: string, condition: string) {
+export function buildLeftJoin(table1: string, table2: string, condition: string): string {
 	return `${table1} LEFT JOIN ${table2} ${condition}`;
 }
 

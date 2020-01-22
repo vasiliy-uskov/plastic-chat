@@ -9,25 +9,35 @@ import {registerUser} from "./actions/registerUser";
 import {logInUser} from "./actions/logInUser";
 import {logOutUser} from "./actions/logOutUser";
 import {editUser} from "./actions/editUser";
+import {array} from "../../core/scheme/array";
+import {getFriendsList} from "./actions/getFriendsList";
+import {removeFriends} from "./actions/removeFriends";
+import {addFriends} from "./actions/addFriends";
+import {findUsers} from "./actions/findUsers";
+
 export function initializeUserRouts(router: IRouter) {
 	router.addRout({
-		path: '/user/:userId',
+		path: '/user/find/',
 		method: HttpMethod.GET,
-		pathVariables: object({
-			userId: guid(),
+		pathVariables: any(),
+		requestScheme: object({
+			search: string(),
 		}),
-		requestScheme: any(),
 		responseScheme: object({
-			firstName: optional(string()),
-			lastName: optional(string()),
-			email: email(),
-			avatarUrl: optional(string()),
-			gender: enumerate([
-				genderToString(Gender.MALE),
-				genderToString(Gender.FEMALE)
-			]),
+			users: array(
+				object({
+					id: guid(),
+					firstName: optional(string()),
+					lastName: optional(string()),
+					email: email(),
+					gender: enumerate([
+						genderToString(Gender.MALE),
+						genderToString(Gender.FEMALE)
+					]),
+				})
+			),
 		}),
-		action: getUser,
+		action: findUsers,
 	});
 
 	router.addRout({
@@ -91,7 +101,6 @@ export function initializeUserRouts(router: IRouter) {
 		action: logOutUser,
 	});
 
-	/**
 	router.addRout({
 		path: '/user/friends_list/',
 		method: HttpMethod.GET,
@@ -103,14 +112,19 @@ export function initializeUserRouts(router: IRouter) {
 			users: array(
 				object({
 					id: guid(),
-					name: string(),
+					firstName: optional(string()),
+					lastName: optional(string()),
+					email: email(),
+					gender: enumerate([
+						genderToString(Gender.MALE),
+						genderToString(Gender.FEMALE)
+					]),
 				})
 			),
 		}),
-		action: () => {},
+		action: getFriendsList,
 	});
 
-	/**
 	router.addRout({
 		path: '/user/friends_list/remove',
 		method: HttpMethod.POST,
@@ -119,10 +133,8 @@ export function initializeUserRouts(router: IRouter) {
 			sessionId: guid(),
 			usersIds: array(guid()),
 		}),
-		responseScheme: object({
-			removedUsersIds: array(guid()),
-		}),
-		action: () => {},
+		responseScheme: any(),
+		action: removeFriends,
 	});
 
 	router.addRout({
@@ -133,10 +145,27 @@ export function initializeUserRouts(router: IRouter) {
 			sessionId: guid(),
 			usersIds: array(guid()),
 		}),
-		responseScheme: object({
-			addedUsersIds: array(guid()),
-		}),
-		action: () => {},
+		responseScheme: any(),
+		action: addFriends,
 	});
-	*/
+
+	router.addRout({
+		path: '/user/:userId',
+		method: HttpMethod.GET,
+		pathVariables: object({
+			userId: guid(),
+		}),
+		requestScheme: any(),
+		responseScheme: object({
+			firstName: optional(string()),
+			lastName: optional(string()),
+			email: email(),
+			avatarUrl: optional(string()),
+			gender: enumerate([
+				genderToString(Gender.MALE),
+				genderToString(Gender.FEMALE)
+			]),
+		}),
+		action: getUser,
+	});
 }

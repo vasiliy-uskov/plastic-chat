@@ -97,7 +97,10 @@ export class Router implements IRouter {
 		const {pathVariables, requestScheme} = validators;
 		try {
 			const urlParams = pathVariables(req.params);
-			const body = requestScheme(req.body);
+			const body = requestScheme({
+				...req.body,
+				...req.query,
+			});
 			return {
 				...urlParams,
 				...body,
