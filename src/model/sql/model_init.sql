@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS file (
     file_id BINARY(16) NOT NULL,
     file_name VARCHAR(255) NOT NULL,
     creating_date TIMESTAMP NOT NULL,
-    UNIQUE INDEX id_UNIQUE (file_id ASC),
+    UNIQUE INDEX file_id_unique_index (file_id ASC),
     PRIMARY KEY (file_id))
     ENGINE = InnoDB;
 
@@ -23,11 +23,11 @@ CREATE TABLE IF NOT EXISTS user (
     gender TINYINT NOT NULL,
     avatar_id BINARY(16) NULL,
     PRIMARY KEY (user_id),
-    UNIQUE INDEX email_UNIQUE (email ASC),
-    UNIQUE INDEX user_id_UNIQUE (user_id ASC),
-    FULLTEXT `find_user_index` (first_name, last_name, email),
-    INDEX avatar_id_idx (avatar_id ASC),
-    CONSTRAINT avatar_id
+    UNIQUE INDEX email_unique_index (email ASC),
+    UNIQUE INDEX user_id_unique_index (user_id ASC),
+    FULLTEXT fulltext_user_index (first_name, last_name, email),
+    INDEX avatar_id_index (avatar_id ASC),
+    CONSTRAINT foreign_key_avatar_constraint
         FOREIGN KEY (avatar_id)
             REFERENCES file (file_id)
             ON DELETE SET NULL
@@ -40,17 +40,16 @@ CREATE TABLE IF NOT EXISTS file_access_right (
     user_id BINARY(16) NOT NULL,
     file_access_right_type TINYINT NOT NULL,
     PRIMARY KEY (file_access_right_id),
-    UNIQUE INDEX file_access_right_id_UNIQUE (file_access_right_id ASC),
-    UNIQUE INDEX file_id_user_id_UNIQUE (file_id, user_id),
-    INDEX fk_file_access_right_file1_idx (file_id ASC),
-    INDEX fk_file_access_right_user1_idx (user_id ASC),
-    INDEX fk_file_access_right_file_access_right_type1_idx (file_access_right_type ASC),
-    CONSTRAINT fk_file_access_right_file1
+    UNIQUE INDEX file_access_right_id_unique_index (file_access_right_id ASC),
+    UNIQUE INDEX file_id_user_id_unique_index (file_id, user_id),
+    INDEX file_foreign_key_index (file_id ASC),
+    INDEX user_foreign_key_index (user_id ASC),
+    CONSTRAINT foreign_key_file_constraint
         FOREIGN KEY (file_id)
             REFERENCES file (file_id)
             ON DELETE CASCADE
             ON UPDATE CASCADE,
-    CONSTRAINT fk_file_access_right_user1
+    CONSTRAINT foreign_key_user_constraint
         FOREIGN KEY (user_id)
             REFERENCES user (user_id)
             ON DELETE CASCADE
@@ -64,17 +63,16 @@ CREATE TABLE IF NOT EXISTS users_relationship (
     right_user_id BINARY(16) NOT NULL,
     users_relationship_type TINYINT NOT NULL,
     PRIMARY KEY (users_relationship_id),
-    INDEX fk_users_relationship_user1_idx (left_user_id ASC),
-    INDEX fk_users_relationship_user2_idx (right_user_id ASC),
-    UNIQUE INDEX users_relationship_id_UNIQUE (users_relationship_id ASC),
-    UNIQUE INDEX initiator_id_target_id_UNIQUE (left_user_id, right_user_id),
-    INDEX fk_users_relationship_users_relationship_type1_idx (users_relationship_type ASC),
-    CONSTRAINT fk_users_relationship_user1
+    INDEX left_user_foreign_key_index (left_user_id ASC),
+    INDEX right_user_foreign_key_index (right_user_id ASC),
+    UNIQUE INDEX users_relationship_id_unique_index (users_relationship_id ASC),
+    UNIQUE INDEX left_user_id_right_user_id_unique_index (left_user_id, right_user_id),
+    CONSTRAINT foreign_key_left_user_constraint
         FOREIGN KEY (left_user_id)
             REFERENCES user (user_id)
             ON DELETE CASCADE
             ON UPDATE CASCADE,
-    CONSTRAINT fk_users_relationship_user2
+    CONSTRAINT foreign_key_right_user_constraint
         FOREIGN KEY (right_user_id)
             REFERENCES user (user_id)
             ON DELETE CASCADE
@@ -87,7 +85,7 @@ CREATE TABLE IF NOT EXISTS chat (
     creating_date TIMESTAMP NOT NULL,
     name VARCHAR(255) NOT NULL,
     PRIMARY KEY (chat_id),
-    UNIQUE INDEX chat_id_UNIQUE (chat_id ASC))
+    UNIQUE INDEX chat_id_unique_index (chat_id ASC))
     ENGINE = InnoDB;
 
 
@@ -95,16 +93,16 @@ CREATE TABLE IF NOT EXISTS chat_has_user (
     chat_has_user_id BINARY(16) NOT NULL,
     chat_id BINARY(16) NOT NULL,
     user_id BINARY(16) NOT NULL,
-    INDEX fk_chat_has_user_user1_idx (user_id ASC),
-    INDEX fk_chat_has_user_chat1_idx (chat_id ASC),
+    INDEX user_foreign_key_index (user_id ASC),
+    INDEX chat_foreign_key_index (chat_id ASC),
     PRIMARY KEY (chat_has_user_id),
-    UNIQUE INDEX chat_has_user_id_UNIQUE (chat_has_user_id ASC),
-    CONSTRAINT fk_chat_has_user_chat1
+    UNIQUE INDEX chat_has_user_id_unique_index (chat_has_user_id ASC),
+    CONSTRAINT foreign_key_chat_constraint
         FOREIGN KEY (chat_id)
             REFERENCES chat (chat_id)
             ON DELETE CASCADE
             ON UPDATE CASCADE,
-    CONSTRAINT fk_chat_has_user_user1
+    CONSTRAINT foreign_key_user_constraint
         FOREIGN KEY (user_id)
             REFERENCES user (user_id)
             ON DELETE CASCADE
@@ -119,16 +117,16 @@ CREATE TABLE IF NOT EXISTS message (
     send_date TIMESTAMP NOT NULL,
     text TEXT NOT NULL,
     PRIMARY KEY (message_id),
-    UNIQUE INDEX message_id_UNIQUE (message_id ASC),
-    INDEX fk_message_user1_idx (addresser_id ASC),
-    INDEX fk_message_chat1_idx (chat_id ASC),
-    INDEX fk_message_send_date_idx (send_date DESC),
-    CONSTRAINT fk_message_user1
+    UNIQUE INDEX message_id_unique_index (message_id ASC),
+    INDEX addresser_foreign_key_index (addresser_id ASC),
+    INDEX chat_foreign_key_index (chat_id ASC),
+    INDEX send_date_index (send_date DESC),
+    CONSTRAINT foreign_key_user_constraint
         FOREIGN KEY (addresser_id)
             REFERENCES user (user_id)
             ON DELETE CASCADE
             ON UPDATE CASCADE,
-    CONSTRAINT fk_message_chat1
+    CONSTRAINT foreign_key_chat_constraint
         FOREIGN KEY (chat_id)
             REFERENCES chat (chat_id)
             ON DELETE CASCADE
@@ -140,20 +138,20 @@ CREATE TABLE IF NOT EXISTS message_has_file (
     message_has_file_id BINARY(16) NOT NULL,
     message_id BINARY(16) NOT NULL,
     file_id BINARY(16) NOT NULL,
-    INDEX fk_message_has_file_file1_idx (file_id ASC),
-    INDEX fk_message_has_file_message1_idx (message_id ASC),
+    INDEX file_foreign_key_index (file_id ASC),
+    INDEX message_foreign_key_index (message_id ASC),
     PRIMARY KEY (message_has_file_id),
-    UNIQUE INDEX message_has_file_id_UNIQUE (message_has_file_id ASC),
-    CONSTRAINT fk_message_has_file_message1
+    UNIQUE INDEX message_has_file_id_unique_index (message_has_file_id ASC),
+    CONSTRAINT foreign_key_message_constraint
         FOREIGN KEY (message_id)
             REFERENCES message (message_id)
-            ON DELETE NO ACTION
-            ON UPDATE NO ACTION,
-    CONSTRAINT fk_message_has_file_file1
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+    CONSTRAINT foreign_key_file_constraint
         FOREIGN KEY (file_id)
             REFERENCES file (file_id)
-            ON DELETE NO ACTION
-            ON UPDATE NO ACTION)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE)
     ENGINE = InnoDB;
 
 
