@@ -17,14 +17,7 @@
       "es2015.symbol",
       "es2015.symbol.wellknown"
     ],
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noImplicitUseStrict": true,
-    "strictBindCallApply": true,
-    "strictFunctionTypes": true,
-    "strictNullChecks": true,
-    "strictPropertyInitialization": true,
+    "strict": true,
     "removeComments": true,
     "outDir": "bin"
   },

@@ -1,8 +1,18 @@
-import {checkType, joiValidatorAdapter, Validator} from "./_common";
+import {checkType, joiValidatorAdapter, ValidationError, Validator} from "./_common";
 import * as joi from "joi";
 
 export function string(): Validator<string> {
 	return (val) => checkType(val, 'string');
+}
+
+export function notEmptyString(): Validator<string> {
+	return (val) => {
+		const str = checkType<string>(val, 'string');
+		if (!str.length) {
+			throw new ValidationError(`String is empty`);
+		}
+		return str;
+	};
 }
 
 export function email(): Validator<string> {

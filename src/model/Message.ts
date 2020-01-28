@@ -4,6 +4,7 @@ import {generateUUId} from "../core/utils/UUIDUtils";
 import {User} from "./User";
 import {Chat} from "./Chat";
 import {File} from "./File";
+import {verify} from "../core/utils/typeutils";
 
 export class Message {
 	private constructor(id: string, text: string, addresserID: string, chatId: string, sendDate: Date, wasInserted = false) {
@@ -35,12 +36,12 @@ export class Message {
 		if (!this._chat) {
 			this._chat = await Chat.get(connection, this._chatId);
 		}
-		return this._chat;
+		return this._chat as Chat;
 	}
 
 	async addresser(connection: Pool): Promise<User> {
 		if (!this._addresser) {
-			this._addresser = await User.get(connection, this._addresserId);
+			this._addresser = verify(await User.get(connection, this._addresserId));
 		}
 		return this._addresser;
 	}

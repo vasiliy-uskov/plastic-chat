@@ -1,11 +1,11 @@
 import {IRouter} from "../../core/routing/IRouter";
 import {HttpMethod} from "../../core/http/HttpMethod";
-import {email, guid, string} from "../../core/scheme/string";
 import {object} from "../../core/scheme/object";
-import {any, enumerate, optional} from "../../core/scheme/raw";
-import {array} from "../../core/scheme/array";
-import {Gender, genderToString} from "../../model/User";
+import {email, guid, notEmptyString} from "../../core/scheme/string";
 import {number} from "../../core/scheme/number";
+import {array} from "../../core/scheme/array";
+import {any, enumerate, optional} from "../../core/scheme/raw";
+import {Gender, genderToString} from "../../model/User";
 import {getMessages} from "./actions/getMessages";
 import {addMessage} from "./actions/addMessage";
 import {deleteMessage} from "./actions/deleteMessage";
@@ -15,74 +15,77 @@ export function initializeMessageRouts(router: IRouter) {
 	router.addRout({
 		path: '/messages/:chatId',
 		method: HttpMethod.GET,
-		pathVariables: object({
+		pathVariables: (() => object({
 			chatId: guid(),
-		}),
-		requestScheme: object({
+		}))(),
+		requestScheme: (() => object({
 			sessionId: guid(),
 			page: number(),
 			pageMessagesCount: number(),
-		}),
-		responseScheme: object({
+		}))(),
+		responseScheme: (() => object({
 			messages: array(object({
 				messageId: guid(),
-				text: string(),
+				text: notEmptyString(),
 				sendDate: number(),
 				attachments: array(object({
 					fileId: guid(),
-					url: string(),
+					url: notEmptyString(),
 				})),
 				addresser: object({
-					firstName: optional(string()),
-					lastName: optional(string()),
+					id: guid(),
+					firstName: optional(notEmptyString()),
+					lastName: optional(notEmptyString()),
 					email: email(),
-					avatarUrl: optional(string()),
+					avatarUrl: optional(notEmptyString()),
 					gender: enumerate([
 						genderToString(Gender.MALE),
 						genderToString(Gender.FEMALE)
 					]),
 				}),
 			})),
-		}),
+		}))(),
 		action: getMessages,
 	});
 
 	router.addRout({
 		path: '/message/add/:chatId',
 		method: HttpMethod.POST,
-		pathVariables: object({
+		pathVariables: (() => object({
 			chatId: guid(),
-		}),
-		requestScheme: object({
+		}))(),
+		requestScheme: (() => object({
 			sessionId: guid(),
-			text: string(),
+			text: notEmptyString(),
 			attachmentsIds: array(guid()),
-		}),
+		}))(),
 		responseScheme: object({
 			messageId: guid(),
 		}),
 		action: addMessage,
 	});
+
 	router.addRout({
 		path: '/message/delete/',
 		method: HttpMethod.POST,
 		pathVariables: any(),
-		requestScheme: object({
+		requestScheme: (() => object({
 			sessionId: guid(),
 			messageId: guid(),
-		}),
+		}))(),
 		responseScheme: any(),
 		action: deleteMessage,
 	});
+
 	router.addRout({
 		path: '/message/edit/',
 		method: HttpMethod.POST,
 		pathVariables: any(),
-		requestScheme: object({
+		requestScheme: (() => object({
 			sessionId: guid(),
 			messageId: guid(),
-			text: string(),
-		}),
+			text: notEmptyString(),
+		}))(),
 		responseScheme: any(),
 		action: editMessage,
 	});

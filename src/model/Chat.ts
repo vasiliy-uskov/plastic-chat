@@ -29,7 +29,7 @@ export class Chat {
 		return buildGetRowQuery(connection, {
 			table: buildLeftJoin('chat_has_user', 'user', buildLeftJoinCondition('chat_has_user', 'user', 'user_id')),
 			condition: buildEqualCondition('chat_id', this._id),
-			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'avatar_id'],
+			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'gender', 'avatar_id'],
 			mapper: (result: any) => result.map(User.createFromRowData),
 		})
 	}
@@ -138,12 +138,12 @@ export class Chat {
 		);
 	}
 
-	static get(connection: Pool, id: string): Promise<Chat> {
+	static get(connection: Pool, id: string): Promise<Chat|null> {
 		return buildGetRowQuery(connection, {
 			table: 'chat',
 			condition: buildEqualCondition('chat_id', id),
 			fields: ['chat_id', 'name', 'creating_date'],
-			mapper: (rows) => Chat.createFromRowData(rows[0]),
+			mapper: ([info]) => info && Chat.createFromRowData(info) || null,
 		})
 	}
 

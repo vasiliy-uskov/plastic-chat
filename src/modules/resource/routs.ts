@@ -1,7 +1,7 @@
 import {IRouter} from "../../core/routing/IRouter";
 import {HttpMethod} from "../../core/http/HttpMethod";
 import {object} from "../../core/scheme/object";
-import {guid, string} from "../../core/scheme/string";
+import {guid, notEmptyString} from "../../core/scheme/string";
 import {any} from "../../core/scheme/raw";
 import {base64File} from "../../core/scheme/binary";
 import {uploadFile} from "./actions/uploadFile";
@@ -12,25 +12,25 @@ export function initializeResourceRouts(router: IRouter) {
 		path: '/resource/upload',
 		method: HttpMethod.POST,
 		pathVariables: any(),
-		requestScheme: object({
+		requestScheme: (() => object({
 			sessionId: guid(),
-			fileName: string(),
+			fileName: notEmptyString(),
 			file: base64File(),
-		}),
-		responseScheme: object({
+		}))(),
+		responseScheme: (() => object({
 			fileId: guid(),
-			url: string(),
-		}),
+			url: notEmptyString(),
+		}))(),
 		action: uploadFile,
 	});
 	router.addRout({
 		path: '/resource/delete',
 		method: HttpMethod.POST,
 		pathVariables: any(),
-		requestScheme: object({
-			sessionId: string(),
+		requestScheme: (() => object({
+			sessionId: guid(),
 			fileId: guid(),
-		}),
+		}))(),
 		responseScheme: any(),
 		action: deleteFile,
 	});

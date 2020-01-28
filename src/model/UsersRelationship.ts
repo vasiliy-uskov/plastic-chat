@@ -2,6 +2,7 @@ import {Pool} from "mysql";
 import {generateUUId} from "../core/utils/UUIDUtils";
 import {buildGetRowQuery, buildEqualCondition, buildInsertQuery, buildSetRowQuery, buildLeftJoin, buildLeftJoinCondition, buildAndCondition, buildDeleteRowQuery, buildOrCondition} from "../core/bd/SqlBuilder";
 import {User} from "./User";
+import {verify} from "../core/utils/typeutils";
 
 export enum UsersRelationshipType {
 	BLACKLIST = 0,
@@ -28,14 +29,14 @@ export class UsersRelationship {
 
 	async leftUser(connection: Pool): Promise<User> {
 		if (!this._leftUser) {
-			this._leftUser = await User.get(connection, this._leftUserId);
+			this._leftUser = verify(await User.get(connection, this._leftUserId));
 		}
 		return this._leftUser;
 	}
 
 	async rightUser(connection: Pool): Promise<User> {
 		if (!this._rightUser) {
-			this._rightUser = await User.get(connection, this._rightUserId);
+			this._rightUser = verify(await User.get(connection, this._rightUserId));
 		}
 		return this._rightUser;
 	}
@@ -90,7 +91,7 @@ export class UsersRelationship {
 
 	static getList(connection: Pool, userId: string, relationshipType: UsersRelationshipType): Promise<Array<User>> {
 		return buildGetRowQuery(connection, {
-			table: buildLeftJoin('users_relationship', 'user', buildLeftJoinCondition('users_relationship', 'user', 'left_user_id', 'user_id')),
+			table: buildLeftJoin('users_relationship', 'user', buildLeftJoinCondition('users_relationship', 'user', 'right_user_id', 'user_id')),
 			condition: buildAndCondition(
 				buildEqualCondition('left_user_id', userId),
 				buildEqualCondition('users_relationship_type', relationshipType)

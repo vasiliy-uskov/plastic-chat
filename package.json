@@ -6,7 +6,7 @@
   "scripts": {
     "start": "./node_modules/.bin/ts-node ./src/app.ts",
     "build": "tsc src/app.ts --downlevelIteration",
-    "test": "mocha -r ts-node/register -r chai tests/**/*.ts"
+    "test": "jest -i"
   },
   "repository": {
     "type": "git",
@@ -19,25 +19,26 @@
   },
   "homepage": "https://github.com/vasiliy-uskov/draftcraft-backend#readme",
   "dependencies": {
-    "body-parser": "^1.18.3",
-    "express": "^4.16.4",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
     "joi": "^14.3.1",
-    "mysql": "^2.17.1",
+    "mysql": "^2.18.1",
     "requester": "^0.1.22",
-    "uuid": "^3.3.2"
+    "uuid": "^3.4.0"
   },
   "devDependencies": {
-    "@types/body-parser": "^1.17.0",
-    "@types/express": "^4.16.1",
-    "@types/jest": "^24.0.23",
-    "@types/joi": "^14.3.2",
-    "@types/mysql": "^2.15.5",
-    "@types/uuid": "^3.4.4",
+    "@types/request": "^2.48.4",
+    "@types/body-parser": "^1.17.1",
+    "@types/express": "^4.17.2",
+    "@types/jest": "^24.9.1",
+    "@types/joi": "^14.3.4",
+    "@types/mysql": "^2.15.8",
+    "@types/uuid": "^3.4.6",
     "jest": "^24.9.0",
     "request": "^2.88.0",
-    "ts-jest": "^24.2.0",
+    "ts-jest": "^24.3.0",
     "ts-node": "^7.0.1",
-    "typescript": "^3.3.4000",
+    "typescript": "^3.7.5",
     "typescript-bundle": "^0.8.9"
   }
 }

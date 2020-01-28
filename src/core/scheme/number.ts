@@ -9,5 +9,5 @@ export function checkNaN(val: number): number {
 }
 
 export function number(): Validator<number> {
-	return (val) => checkNaN(+checkType(val, 'number'));
+	return (val) => checkNaN(+checkType<number>(val, 'number'));
 }

@@ -116,7 +116,7 @@ export class User {
 	}
 
 	static creat(firstName: string|null, lastName: string|null, email: string, password: string, gender: Gender): User {
-		return new User(generateUUId(), firstName, lastName, email, password, gender);
+		return new User(generateUUId(), firstName, lastName, email.toLowerCase(), password, gender);
 	}
 
 	static createFromRowData(rowData: any): User {
@@ -124,7 +124,7 @@ export class User {
 			rowData.user_id,
 			rowData.first_name,
 			rowData.last_name,
-			rowData.email,
+			rowData.email.toLowerCase(),
 			rowData.password,
 			rowData.gender,
 			rowData.avatar_id ? rowData.avatar_id : rowData.avatar_id,
@@ -132,12 +132,12 @@ export class User {
 		);
 	}
 
-	static get(connection: Pool, id: string): Promise<User> {
+	static get(connection: Pool, id: string): Promise<(User|null)> {
 		return buildGetRowQuery(connection, {
 			table: 'user',
 			condition: buildEqualCondition('user_id', id),
 			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'gender', 'avatar_id'],
-			mapper: (rows) => User.createFromRowData(rows[0]),
+			mapper: ([row]) => row && User.createFromRowData(row) || null,
 		})
 	}
 
@@ -146,7 +146,7 @@ export class User {
 			table: 'user',
 			condition: buildFullTextSearch(['email', 'first_name', 'last_name'], [searchString]),
 			fields: ['user_id', 'email', 'first_name', 'last_name', 'password', 'gender', 'avatar_id'],
-			mapper: (rows: Array<any>) => rows.map(User.createFromRowData),
+			mapper: rows => rows.map(User.createFromRowData),
 		})
 	}
 

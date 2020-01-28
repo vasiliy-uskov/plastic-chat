@@ -3,6 +3,7 @@ import {generateUUId} from "../core/utils/UUIDUtils";
 import {buildGetRowQuery, buildEqualCondition, buildInsertQuery, buildSetRowQuery, buildAndCondition} from "../core/bd/SqlBuilder";
 import {User} from "./User";
 import {File} from "./File";
+import {verify} from "../core/utils/typeutils";
 
 export enum FileAccessRightType {
 	VIEW = 0,
@@ -28,7 +29,7 @@ export class FileAccessRight {
 
 	async user(connection: Pool): Promise<User> {
 		if (!this._user) {
-			this._user = await User.get(connection, this._userId);
+			this._user = verify(await User.get(connection, this._userId));
 		}
 		return this._user;
 	}
@@ -96,12 +97,13 @@ export class FileAccessRight {
 				buildEqualCondition('file_id', fileId)
 			),
 			fields: ['file_access_right_type'],
-			mapper: (rows) => (rows[0] && rows[0].file_access_right_type) || FileAccessRightType.EDIT,
+			mapper: ([row]) => (typeof row != "undefined" ? row.file_access_right_type : FileAccessRightType.VIEW),
 		})
 	}
 
 	static async canEdit(connection: Pool, userId: string, fileId: string): Promise<boolean> {
-		return await FileAccessRight.getAccessType(connection, userId, fileId) == FileAccessRightType.EDIT;
+		const accessType = await FileAccessRight.getAccessType(connection, userId, fileId);
+		return accessType == FileAccessRightType.EDIT;
 	}
 
 	private readonly _id: string;

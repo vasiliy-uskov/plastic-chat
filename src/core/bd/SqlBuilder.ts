@@ -2,9 +2,11 @@ import {Pool, escape} from "mysql";
 
 type Primitive = string|Date|number;
 
-function buildQuery(pool: Pool, query: string): Promise<any> {
+export function buildQuery(pool: Pool, query: string): Promise<any> {
 	return new Promise<any>((resolver, rejects) => {
-		pool.query(query, (error, result) => error ? rejects(error) : resolver(result))
+		pool.query(query, (error, result) => {
+			error ? rejects(error) : resolver(result)
+		})
 	});
 }
 
@@ -13,7 +15,7 @@ function isIdField(fieldName: string): boolean {
 }
 
 export function processStringLiteral(str: string): string {
-	return `'${escape(str)}'`;
+	return `${escape(str)}`;
 }
 
 function processIdValue(id: string): string {
@@ -21,7 +23,14 @@ function processIdValue(id: string): string {
 }
 
 function processIdFieldName(fieldName: string): string {
-	return `HEX(${fieldName}) as ${fieldName}`;
+	return `LOWER(HEX(${fieldName})) as ${fieldName}`;
+}
+
+function formatNumber(num: number, minDigitsCount: number) {
+	const numberString = num.toString();
+	const zeroDigitsPrefixCount = Math.max(0, minDigitsCount - numberString.length);
+	const zeroDigitsPrefix = Array(zeroDigitsPrefixCount).fill(0).join('');
+	return zeroDigitsPrefix + numberString;
 }
 
 function processValue(key: string, value: Primitive|null): string {
@@ -29,13 +38,13 @@ function processValue(key: string, value: Primitive|null): string {
 		return processIdValue(value.toString());
 	}
 	if (value instanceof Date) {
-		const year = value.getUTCFullYear();
-		const month = value.getUTCMonth() + 1;
-		const day = value.getUTCDay();
-		const hours = value.getUTCHours();
-		const minutes = value.getUTCMinutes();
-		const seconds = value.getUTCSeconds();
-		value = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+		const year = formatNumber(value.getUTCFullYear(), 4);
+		const month = formatNumber(value.getUTCMonth() + 1, 2);
+		const day = formatNumber(value.getUTCDate(), 2);
+		const hours = formatNumber(value.getUTCHours(), 2);
+		const minutes = formatNumber(value.getUTCMinutes(), 2);
+		const seconds = formatNumber(value.getUTCSeconds(), 2);
+		return processStringLiteral(`${year}-${month}-${day} ${hours}:${minutes}:${seconds}`);
 	}
 	if (typeof value == 'string') {
 		return processStringLiteral(value);
@@ -44,10 +53,6 @@ function processValue(key: string, value: Primitive|null): string {
 		return value.toString();
 	}
 	return "NULL";
-}
-
-export function buildAlias(table: string, columnName: string): string {
-	return `${table}.${columnName} as ${columnName}`;
 }
 
 export function buildFullTextSearch(fieldNames: Array<string>, values: Array<string>): string {

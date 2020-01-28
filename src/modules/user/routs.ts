@@ -1,7 +1,7 @@
 import {IRouter} from "../../core/routing/IRouter";
 import {HttpMethod} from "../../core/http/HttpMethod";
 import {object} from "../../core/scheme/object";
-import {email, guid, string} from "../../core/scheme/string";
+import {email, guid, notEmptyString} from "../../core/scheme/string";
 import {any, enumerate, optional} from "../../core/scheme/raw";
 import {Gender, genderToString} from "../../model/User";
 import {getUser} from "./actions/getUser";
@@ -20,15 +20,15 @@ export function initializeUserRouts(router: IRouter) {
 		path: '/user/find/',
 		method: HttpMethod.GET,
 		pathVariables: any(),
-		requestScheme: object({
-			search: string(),
-		}),
+		requestScheme: (() => object({
+			search: notEmptyString(),
+		}))(),
 		responseScheme: object({
 			users: array(
 				object({
 					id: guid(),
-					firstName: optional(string()),
-					lastName: optional(string()),
+					firstName: optional(notEmptyString()),
+					lastName: optional(notEmptyString()),
 					email: email(),
 					gender: enumerate([
 						genderToString(Gender.MALE),
@@ -44,16 +44,16 @@ export function initializeUserRouts(router: IRouter) {
 		path: '/user/register/',
 		method: HttpMethod.POST,
 		pathVariables: any(),
-		requestScheme: object({
-			firstName: optional(string()),
-			lastName: optional(string()),
-			password: string(),
+		requestScheme: (() => object({
+			firstName: optional(notEmptyString()),
+			lastName: optional(notEmptyString()),
+			password: notEmptyString(),
 			email: email(),
 			gender: enumerate([
 				genderToString(Gender.MALE),
 				genderToString(Gender.FEMALE)
 			]),
-		}),
+		}))(),
 		responseScheme: object({
 			userId: guid(),
 		}),
@@ -64,13 +64,13 @@ export function initializeUserRouts(router: IRouter) {
 		path: '/user/edit/',
 		method: HttpMethod.POST,
 		pathVariables: any(),
-		requestScheme: object({
+		requestScheme: (() => object({
 			sessionId: guid(),
-			firstName: optional(string()),
-			lastName: optional(string()),
-			password: optional(string()),
-			avatarId: optional(string()),
-		}),
+			firstName: optional(notEmptyString()),
+			lastName: optional(notEmptyString()),
+			password: optional(notEmptyString()),
+			avatarId: optional(guid()),
+		}))(),
 		responseScheme: any(),
 		action: editUser,
 	});
@@ -79,10 +79,10 @@ export function initializeUserRouts(router: IRouter) {
 		path: '/user/login/',
 		method: HttpMethod.POST,
 		pathVariables: any(),
-		requestScheme: object({
+		requestScheme: (() => object({
 			email: email(),
-			password: string(),
-		}),
+			password: notEmptyString(),
+		}))(),
 		responseScheme: object({
 			userId: guid(),
 			sessionId: guid(),
@@ -94,9 +94,9 @@ export function initializeUserRouts(router: IRouter) {
 		path: '/user/logout/',
 		method: HttpMethod.POST,
 		pathVariables: any(),
-		requestScheme: object({
+		requestScheme: (() => object({
 			sessionId: guid(),
-		}),
+		}))(),
 		responseScheme: any(),
 		action: logOutUser,
 	});
@@ -105,10 +105,10 @@ export function initializeUserRouts(router: IRouter) {
 		path: '/user/friends_list/remove',
 		method: HttpMethod.POST,
 		pathVariables: any(),
-		requestScheme: object({
+		requestScheme: (() => object({
 			sessionId: guid(),
 			userId: guid(),
-		}),
+		}))(),
 		responseScheme: any(),
 		action: removeFriend,
 	});
@@ -117,10 +117,10 @@ export function initializeUserRouts(router: IRouter) {
 		path: '/user/friends_list/add',
 		method: HttpMethod.POST,
 		pathVariables: any(),
-		requestScheme: object({
+		requestScheme: (() => object({
 			sessionId: guid(),
 			userId: guid(),
-		}),
+		}))(),
 		responseScheme: any(),
 		action: addFriend,
 	});
@@ -129,15 +129,15 @@ export function initializeUserRouts(router: IRouter) {
 		path: '/user/friends_list/',
 		method: HttpMethod.GET,
 		pathVariables: any(),
-		requestScheme: object({
+		requestScheme: (() => object({
 			sessionId: guid(),
-		}),
+		}))(),
 		responseScheme: object({
 			users: array(
 				object({
 					id: guid(),
-					firstName: optional(string()),
-					lastName: optional(string()),
+					firstName: optional(notEmptyString()),
+					lastName: optional(notEmptyString()),
 					email: email(),
 					gender: enumerate([
 						genderToString(Gender.MALE),
@@ -152,15 +152,15 @@ export function initializeUserRouts(router: IRouter) {
 	router.addRout({
 		path: '/user/:userId',
 		method: HttpMethod.GET,
-		pathVariables: object({
+		pathVariables: (() => object({
 			userId: guid(),
-		}),
+		}))(),
 		requestScheme: any(),
 		responseScheme: object({
-			firstName: optional(string()),
-			lastName: optional(string()),
+			firstName: optional(notEmptyString()),
+			lastName: optional(notEmptyString()),
 			email: email(),
-			avatarUrl: optional(string()),
+			avatarUrl: optional(notEmptyString()),
 			gender: enumerate([
 				genderToString(Gender.MALE),
 				genderToString(Gender.FEMALE)
